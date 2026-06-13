@@ -303,8 +303,58 @@ def load_departments():
             "manager_email": (d.get("manager_email") or "").lower().strip(),
             "member_emails": member_emails,
             "member_roles":  member_roles,
+            # Preserve entry_filters for subsidiary attribution (verbatim from Panso)
+            "entry_filters": d.get("entry_filters") or {},
         })
     return out
+
+
+def _norm(s):
+    return (s or "").strip().lower()
+
+
+def default_dept_entry_filter(dept_name):
+    """Build default (client, project) filter from dept name (verbatim from Panso)."""
+    if " - " not in (dept_name or ""):
+        return None
+    company, function_raw = dept_name.split(" - ", 1)
+    code_to_clients = {
+        "MG":  ["MG", "Mata Group"],
+        "MT":  ["MT", "Mata Technologies"],
+        "E":   ["E", "Ehrlich"],
+        "MCS": ["MCS", "Mata Creative Services"],
+        "TSF": ["TSF", "The Sandbox Foundation", "Sandbox Foundation", "Sandbox"],
+    }
+    clients = code_to_clients.get(company.strip(), [])
+    fn = re.split(r"[\(\-\/]", function_raw, maxsplit=1)[0].strip()
+    return {"clients": clients, "projects_contains": [fn] if fn else []}
+
+
+def _effective_entry_filter(dept):
+    """Return effective entry_filter for a dept dict (verbatim from Panso)."""
+    raw = (dept.get("entry_filters") if isinstance(dept, dict) else None)
+    if raw and (raw.get("clients") or raw.get("projects_contains")):
+        return raw
+    return default_dept_entry_filter((dept.get("name") or "") if isinstance(dept, dict) else "") or {}
+
+
+def _prefix_of_dept(name):
+    m = re.match(r"^([A-Z]+)\s*-\s*", name or "")
+    return m.group(1) if m else ""
+
+
+PROJECTS_ROSTER = DATA_DIR / "projects-roster.json"
+
+
+def load_projects_roster():
+    """Return list of {id, name, client_name, is_archived, ...} or [] if not synced."""
+    if not PROJECTS_ROSTER.exists():
+        return []
+    try:
+        data = json.loads(PROJECTS_ROSTER.read_text(encoding="utf-8"))
+        return data.get("projects") or []
+    except Exception:
+        return []
 
 
 def _build_dept_resolvers():
@@ -550,39 +600,137 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json(list_available_periods(), origin=origin)
 
             if u.path == "/api/projects":
-                params   = parse_qs(u.query)
-                yr       = (params.get("year", [str(dt.date.today().year)])[0] or "").strip()
-                projs    = {}
-                # Parenthetical subsidiary tags (e.g. "(MT)", "(E)")
-                _PAREN   = re.compile(r"\(([A-Z]+)\)\s*$")
+                params      = parse_qs(u.query)
+                yr          = (params.get("year", [str(dt.date.today().year)])[0] or "").strip()
+                year_prefix = (yr + "-") if yr else ""
+
+                # ── Dept-based subsidiary resolver (verbatim from Panso) ──────
+                depts = load_departments()
+                _sub_clients = {}
+                _sub_projs   = {}
+                _email_to_dept = {}
+                for _d in depts:
+                    _pref = _prefix_of_dept(_d.get("name") or "")
+                    if not _pref:
+                        continue
+                    _f = _effective_entry_filter(_d)
+                    for _c in (_f.get("clients") or []):
+                        _cn = _norm(_c)
+                        if _cn:
+                            _sub_clients.setdefault(_pref, set()).add(_cn)
+                    for _p in (_f.get("projects_contains") or []):
+                        _pn = _norm(_p)
+                        if _pn:
+                            _sub_projs.setdefault(_pref, set()).add(_pn)
+                    for _em in (_d.get("member_emails") or []):
+                        _email_to_dept.setdefault((_em or "").lower(), _d.get("name") or "")
+
+                _PARENTHETICALS = {"MT": "(mt)", "MCS": "(mcs)", "E": "(e)", "TSF": "(tsf)"}
+                _sub_clients_rx = {pref: [(_kn, re.compile(r"\b" + re.escape(_kn) + r"\b", re.IGNORECASE))
+                                           for _kn in clients]
+                                   for pref, clients in _sub_clients.items()}
+                _sub_projs_rx   = {pref: [(_kn, re.compile(r"\b" + re.escape(_kn) + r"\b", re.IGNORECASE))
+                                           for _kn in projs_]
+                                   for pref, projs_ in _sub_projs.items()}
+
+                def _subsidiary_of(client, project_name):
+                    cn = client or ""
+                    pn = project_name or ""
+                    if cn.strip():
+                        for pref, rxs in _sub_clients_rx.items():
+                            for _kn, rx in rxs:
+                                if rx.search(cn):
+                                    return pref
+                    pn_lc = pn.lower()
+                    if pn_lc:
+                        for pref, tag in _PARENTHETICALS.items():
+                            if tag in pn_lc:
+                                return pref
+                    if pn.strip():
+                        for pref, rxs in _sub_projs_rx.items():
+                            for _kn, rx in rxs:
+                                if rx.search(pn):
+                                    return pref
+                    return ""
+
+                def _sub_from_members(members_list):
+                    by_prefix = {}
+                    for m in members_list or []:
+                        em = (m.get("email") or "").lower()
+                        dept_name = _email_to_dept.get(em)
+                        if not dept_name:
+                            continue
+                        pref = _prefix_of_dept(dept_name)
+                        if pref:
+                            by_prefix[pref] = by_prefix.get(pref, 0.0) + (m.get("hours") or 0)
+                    return max(by_prefix.items(), key=lambda kv: kv[1])[0] if by_prefix else ""
+
+                # ── Iterate all CSV rows ──────────────────────────────────────
+                projs = {}
                 for _lbl, path in discover_weeks():
                     for r in load_week(path):
+                        d_date = (r.get("date") or "").strip()
+                        if year_prefix and not d_date.startswith(year_prefix):
+                            continue
                         key = (r.get("project_name") or "").strip()
                         if not key:
                             continue
-                        if yr and not (r.get("date") or "").startswith(yr):
-                            continue
                         p = projs.setdefault(key, {
-                            "project":        key,
-                            "client":         (r.get("client_name") or "").strip(),
-                            "subsidiary":     "",
-                            "total_seconds":  0,
+                            "project":       key,
+                            "client":        (r.get("client_name") or "").strip(),
+                            "total_seconds": 0,
+                            "_member_secs":  {},
+                            "_member_name":  {},
+                            "_people":       set(),
                         })
-                        p["total_seconds"] += int(r.get("duration_seconds") or 0)
-                        if not p["subsidiary"]:
-                            m = _PAREN.search(key)
-                            if m:
-                                p["subsidiary"] = m.group(1)
-                items = []
+                        secs = int(r.get("duration_seconds") or 0)
+                        p["total_seconds"] += secs
+                        e = (r.get("user_email") or "").strip()
+                        if e:
+                            p["_people"].add(e)
+                            ek = e.lower()
+                            p["_member_secs"][ek] = p["_member_secs"].get(ek, 0) + secs
+                            nm = (r.get("user_name") or "").strip()
+                            if nm and len(nm) > len(p["_member_name"].get(ek, "")):
+                                p["_member_name"][ek] = nm
+
+                out = []
                 for p in projs.values():
-                    items.append({
-                        "project":     p["project"],
-                        "client":      p["client"],
-                        "subsidiary":  p["subsidiary"],
-                        "total_hours": round(p["total_seconds"] / 3600, 1),
+                    members = sorted(
+                        [{"email": ek, "name": p["_member_name"].get(ek, ek),
+                          "hours": round(secs / 3600, 1)}
+                         for ek, secs in p["_member_secs"].items() if secs > 0],
+                        key=lambda m: -m["hours"]
+                    )
+                    _sub = _subsidiary_of(p["client"], p["project"])
+                    if not _sub:
+                        _sub = _sub_from_members(members)
+                    out.append({
+                        "project":      p["project"],
+                        "client":       p["client"],
+                        "subsidiary":   _sub,
+                        "total_hours":  round(p["total_seconds"] / 3600, 1),
+                        "people_count": len(p["_people"]),
                     })
-                items.sort(key=lambda x: x["project"].lower())
-                return self._send_json({"items": items}, origin=origin)
+
+                # ── Merge roster so zero-hour projects appear too ─────────────
+                seen_names = {x["project"].lower(): True for x in out}
+                for rp in load_projects_roster():
+                    name = (rp.get("name") or "").strip()
+                    if not name or name.lower() in seen_names:
+                        continue
+                    client = (rp.get("client_name") or "").strip()
+                    _sub   = _subsidiary_of(client, name)
+                    out.append({
+                        "project":      name,
+                        "client":       client,
+                        "subsidiary":   _sub,
+                        "total_hours":  0.0,
+                        "people_count": 0,
+                    })
+
+                out.sort(key=lambda x: x["project"].lower())
+                return self._send_json({"items": out}, origin=origin)
 
             if u.path == "/api/finance/incentive":
                 try:
