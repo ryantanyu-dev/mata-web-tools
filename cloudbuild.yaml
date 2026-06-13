@@ -1,0 +1,31 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-t'
+      - 'asia-southeast1-docker.pkg.dev/panso-ph/cloud-run-source-deploy/mata-tools-api'
+      - '.'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - 'asia-southeast1-docker.pkg.dev/panso-ph/cloud-run-source-deploy/mata-tools-api'
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - mata-tools-api
+      - '--image=asia-southeast1-docker.pkg.dev/panso-ph/cloud-run-source-deploy/mata-tools-api'
+      - '--region=asia-southeast1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8080'
+      - '--add-volume=name=panso-data,type=cloud-storage,bucket=panso-ph-data,readonly=true'
+      - '--add-volume-mount=volume=panso-data,mount-path=/data'
+      - '--set-env-vars=PANSO_ROOT=/data,FIREBASE_PROJECT_ID=panso-ph'
+      - '--service-account=panso-api@panso-ph.iam.gserviceaccount.com'
+
+images:
+  - 'asia-southeast1-docker.pkg.dev/panso-ph/cloud-run-source-deploy/mata-tools-api'

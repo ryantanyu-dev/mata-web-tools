@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Incentive Calculator · Mata Web Tools</title>
+<style>
+  /* ── Design-system tokens (mirrored from Panso) ── */
+  :root {
+    --bg:#ffffff; --border:#e5e5e7;
+    --text:#1d1d1f; --muted:#6e6e73;
+    --hover:#ececee; --active-bg:#1d1d1f; --active-fg:#ffffff;
+    --good:#16a34a; --warn:#ca8a04;
+    --panel:#ffffff; --panel-muted:#fafafa; --input-bg:#ffffff;
+    --fs-2xs:9px; --fs-xs:10px; --fs-10-5:10.5px;
+    --fs-sm:11px; --fs-base:12px; --fs-md:13px; --fs-14:14px;
+    --fs-15:15px; --fs-lg:16px; --fs-18:18px; --fs-20:20px;
+    --fs-xl:22px; --fs-9-5:9.5px;
+    --sp-2:2px; --sp-3:3px; --sp-4:4px; --sp-5:5px;
+    --sp-6:6px; --sp-7:7px; --sp-8:8px; --sp-9:9px;
+    --sp-10:10px; --sp-12:12px; --sp-14:14px; --sp-16:16px;
+    --sp-18:18px; --sp-20:20px; --sp-22:22px; --sp-24:24px;
+    --sp-28:28px; --sp-30:30px; --sp-32:32px; --sp-40:40px;
+  }
+  html[data-theme="dark"] {
+    --bg:#0f1115; --border:#2a2d36;
+    --text:#e5e7eb; --muted:#9ca3af;
+    --hover:#1e222a; --active-bg:#e5e7eb; --active-fg:#0f1115;
+    --good:#22c55e; --warn:#eab308;
+    --panel:#14161c; --panel-muted:#181b22; --input-bg:#0f1115;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+       background:var(--bg);color:var(--text);font-size:var(--fs-base);line-height:1.5}
+  /* ── Shell ── */
+  #loading-wall{display:flex;align-items:center;justify-content:center;
+                min-height:100vh;color:var(--muted);font-size:var(--fs-md)}
+  #shell{display:none;max-width:980px;margin:0 auto;padding:var(--sp-24) var(--sp-24)}
+  .shell-hd{display:flex;align-items:center;gap:var(--sp-16);margin-bottom:var(--sp-24);
+            flex-wrap:wrap}
+  .back-link{font-size:var(--fs-sm);color:var(--muted);text-decoration:none;
+             display:flex;align-items:center;gap:4px}
+  .back-link:hover{color:var(--text)}
+  .shell-title{font-size:var(--fs-18);font-weight:700;flex:1}
+  .user-chip{font-size:var(--fs-sm);color:var(--muted)}
+  /* ── Period bar ── */
+  .period-bar{display:flex;gap:var(--sp-12);align-items:center;flex-wrap:wrap;
+              margin-bottom:var(--sp-24);padding:var(--sp-12) var(--sp-16);
+              background:var(--panel-muted);border:1px solid var(--border);border-radius:8px}
+  .period-bar label{font-size:var(--fs-sm);font-weight:600;color:var(--muted)}
+  .period-bar select{padding:var(--sp-6) var(--sp-8);border:1px solid var(--border);
+                     border-radius:6px;background:var(--input-bg);color:var(--text);
+                     font:inherit;font-size:var(--fs-md)}
+  /* ── Incentive tool styles (ported from Panso index.html) ── */
+  .ic-wrap{padding:0}
+  .ic-hd{margin-bottom:var(--sp-12)}
+  .ic-title{font-size:var(--fs-18);font-weight:700}
+  .ic-how code{font-size:var(--fs-sm);font-family:ui-monospace,monospace}
+  .coming-soon-banner{padding:var(--sp-12) var(--sp-16);
+    background:#f3f4f6;border:1px solid var(--border);border-radius:8px;
+    font-size:var(--fs-md);color:var(--muted)}
+  .muted{color:var(--muted)}
+  .empty{color:var(--muted);padding:var(--sp-16);text-align:center}
+  /* ── Dark override for panel surfaces ── */
+  html[data-theme="dark"] .coming-soon-banner{background:var(--panel-muted);border-color:var(--border)}
+  html[data-theme="dark"] select,html[data-theme="dark"] input{
+    background:var(--input-bg);color:var(--text);border-color:var(--border)}
+</style>
+</head>
+<body>
+<div id="loading-wall">Loading…</div>
+
+<div id="shell">
+  <div class="shell-hd">
+    <a class="back-link" href="/">← Tools</a>
+    <div class="shell-title">MG-Finance · Incentive Calculator</div>
+    <div class="user-chip" id="user-chip"></div>
+  </div>
+
+  <!-- Period picker -->
+  <div class="period-bar">
+    <label for="period-type">Period</label>
+    <select id="period-type">
+      <option value="payperiod">Pay period</option>
+      <option value="week">Week</option>
+      <option value="month">Month</option>
+    </select>
+    <select id="period-value" style="min-width:200px">
+      <option>Loading…</option>
+    </select>
+    <button id="period-reload-btn"
+      style="padding:var(--sp-6) var(--sp-12);border:1px solid var(--border);
+             border-radius:6px;background:transparent;color:var(--text);
+             font:inherit;font-size:var(--fs-md);cursor:pointer">Reload</button>
+  </div>
+
+  <!-- Tool content injected here -->
+  <div id="dept-body"></div>
+</div>
+
+<!-- Firebase compat SDK — NO defer/async -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return (s || '').toString().replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtPHP(n) {
+  const f = (+n || 0).toFixed(2).split('.');
+  f[0] = f[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return '₱' + f[0] + '.' + f[1];
+}
+
+// ── Token cache (mirrors Panso id_token pattern) ─────────────────────────────
+let _cachedToken  = null;
+let _tokenExpiry  = 0;
+let _currentUser  = null;
+
+async function getToken() {
+  if (_currentUser && Date.now() < _tokenExpiry - 60000) return _cachedToken;
+  if (!_currentUser) return null;
+  _cachedToken = await _currentUser.getIdToken(true);
+  _tokenExpiry = Date.now() + 55 * 60 * 1000;
+  return _cachedToken;
+}
+
+async function apiFetch(path) {
+  const tok  = await getToken();
+  const hdrs = tok ? { 'Authorization': 'Bearer ' + tok } : {};
+  const resp = await fetch(path, { headers: hdrs });
+  return resp.json();
+}
+
+// ── Period state (mirrors STATE.period in Panso) ──────────────────────────────
+const STATE = { period: { type: 'payperiod', value: '' }, periods: {} };
+
+function currentPeriodParam() {
+  return 'type=' + encodeURIComponent(STATE.period.type) +
+         '&value=' + encodeURIComponent(STATE.period.value || '');
+}
+function currentPeriodLabel() {
+  const list = STATE.periods[STATE.period.type] || [];
+  const hit  = list.find(p => p.value === STATE.period.value);
+  return hit ? hit.label : (STATE.period.value || '');
+}
+
+// ── Incentive state (verbatim from Panso index.html ~6198) ───────────────────
+let _incentiveState = {
+  project: '',
+  multiplier: 1.5,
+  amount: 0,
+  lastChanged: 'multiplier',
+  lastItems: null,
+  lastProject: '',
+  lastMultiplier: null,
+  subFilter: {MT: true, E: true, MCS: true, TSF: true},
+};
+
+// ── renderFinanceIncentive (verbatim port from Panso ~6214) ──────────────────
+async function renderFinanceIncentive(name) {
+  const body = document.getElementById('dept-body');
+  if (!body) return;
+  const projRes = await apiFetch('/api/projects?year=' + new Date().getFullYear());
+  const allProjs = (projRes && projRes.items) || [];
+  const seen = new Set();
+  const projs = [];
+  for (const p of allProjs) {
+    const k = (p.project || '').toLowerCase();
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    projs.push(p);
+  }
+  projs.sort((a, b) => a.project.toLowerCase().localeCompare(b.project.toLowerCase()));
+
+  window._icProjList = projs
+    .filter(p => {
+      const sub = (p.subsidiary || "").trim();
+      return sub ? !!_incentiveState.subFilter[sub] : false;
+    })
+    .sort((a, b) =>
+      new Intl.Collator(undefined, {numeric: true, sensitivity: "base"})
+        .compare(a.project, b.project));
+
+  body.innerHTML =
+    '<div class="ic-wrap">' +
+      '<div class="ic-hd">' +
+        '<h2 class="ic-title">Incentive Calculator <span class="muted" style="font-weight:400; font-size:var(--fs-14)">· ' + esc(currentPeriodLabel()) + '</span></h2>' +
+        '<div class="ic-how" style="margin-top:4px;padding:var(--sp-8) var(--sp-12);background:var(--panel);border:1px solid var(--border);border-radius:8px;font-size:var(--fs-base);color:var(--muted)">' +
+          '<code style="font-size:var(--fs-sm)">incentive = hourly_rate × hours × (multiplier − 1)</code>' +
+          ' · 1× = base only; 1.5× = +50%; 2× = double pay. Only FTEs qualify. Multiplier is applied at project close.' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;align-items:flex-start">' +
+        '<div style="flex:3;min-width:280px">' +
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">' +
+            '<div class="ic-step-lbl" style="font-size:var(--fs-sm);font-weight:700;color:var(--muted)">Step 1 · Project</div>' +
+            '<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">' +
+              '<button type="button" class="ic-bulk" data-action="select-all" style="padding:var(--sp-2) var(--sp-8);border:1px dashed var(--border);border-radius:999px;cursor:pointer;font-size:var(--fs-sm);font-weight:600;color:var(--muted);background:transparent">All</button>' +
+              ['MT', 'E', 'MCS', 'TSF'].map(s => {
+                const colors = {MT:'#f97316', E:'#3b82f6', MCS:'#a855f7', TSF:'#f43f5e'};
+                const checked = _incentiveState.subFilter[s] ? 'checked' : '';
+                return '<label class="ic-sub-toggle" data-sub="' + s + '" style="display:inline-flex;align-items:center;gap:4px;padding:var(--sp-2) var(--sp-8);border:1px solid var(--border);border-radius:999px;cursor:pointer;font-size:var(--fs-base);font-weight:600;color:var(--text);background:transparent">' +
+                  '<input type="checkbox" data-sub="' + s + '" ' + checked + ' style="accent-color:' + colors[s] + ';margin:0">' +
+                  s +
+                '</label>';
+              }).join('') +
+              '<button type="button" class="ic-bulk" data-action="clear-all" style="padding:var(--sp-2) var(--sp-8);border:1px dashed var(--border);border-radius:999px;cursor:pointer;font-size:var(--fs-sm);font-weight:600;color:var(--muted);background:transparent">None</button>' +
+            '</div>' +
+          '</div>' +
+          '<div style="position:relative">' +
+            '<input type="text" id="ic-project-input" autocomplete="off" placeholder="Type to search, or click to browse…" value="' + esc(_incentiveState.project || '') + '" style="width:100%;padding:var(--sp-9) var(--sp-30) var(--sp-9) var(--sp-12);border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font:inherit;box-sizing:border-box">' +
+            '<button type="button" id="ic-project-clear" title="Clear" style="position:absolute;right:6px;top:7px;padding:var(--sp-2) var(--sp-8);background:transparent;border:none;cursor:pointer;color:var(--muted);font-size:var(--fs-14)">×</button>' +
+            '<div id="ic-project-dropdown" style="display:none;position:absolute;top:44px;left:0;right:0;max-height:360px;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:1000;padding:0"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="flex:2;min-width:240px">' +
+          '<div class="ic-step-lbl" style="font-size:var(--fs-sm);font-weight:700;color:var(--muted);margin-bottom:6px">Step 2 · Incentive level</div>' +
+          '<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">' +
+            '<div style="flex:1;min-width:110px">' +
+              '<label class="muted" style="display:block;font-size:var(--fs-sm);margin-bottom:4px">Multiplier</label>' +
+              '<div style="display:flex;align-items:center;gap:4px">' +
+                '<input type="number" id="ic-multiplier" value="' + (_incentiveState.multiplier || 1.5).toFixed(2) + '" step="0.01" min="1.00" title="1.00 = no bonus, 1.50 = +50%, 2.00 = double pay" style="width:100%;padding:var(--sp-8);border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font:inherit">' +
+                '<span style="font-weight:600;font-size:var(--fs-14);flex-shrink:0">×</span>' +
+              '</div>' +
+            '</div>' +
+            '<div style="flex:1;min-width:120px">' +
+              '<label class="muted" style="display:block;font-size:var(--fs-sm);margin-bottom:4px">Amount</label>' +
+              '<div style="display:flex;align-items:center;gap:4px">' +
+                '<span style="font-weight:600;font-size:var(--fs-14);flex-shrink:0">₱</span>' +
+                '<input type="number" id="ic-amount" value="' + (_incentiveState.amount || 0).toFixed(2) + '" step="100" min="0" title="Target total bonus to disburse" style="width:100%;padding:var(--sp-8);border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text);font:inherit">' +
+              '</div>' +
+            '</div>' +
+            '<button type="button" id="ic-clear-all-btn" style="padding:var(--sp-8) var(--sp-12);background:transparent;color:var(--text);border:1px solid var(--border);border-radius:6px;cursor:pointer;flex-shrink:0">Clear</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div id="ic-result" style="margin-top:16px"></div>' +
+    '</div>';
+
+  document.querySelectorAll('.ic-sub-toggle input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      _incentiveState.subFilter[cb.dataset.sub] = cb.checked;
+      renderFinanceIncentive(name);
+    });
+  });
+  document.querySelectorAll('.ic-bulk').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const v = (btn.dataset.action === 'select-all');
+      for (const s of ['MT','E','MCS','TSF']) _incentiveState.subFilter[s] = v;
+      renderFinanceIncentive(name);
+    });
+  });
+
+  const ttInput    = document.getElementById('ic-project-input');
+  const ttDropdown = document.getElementById('ic-project-dropdown');
+  const ttClear    = document.getElementById('ic-project-clear');
+  const SUB_COLORS = {MT:'#f97316', E:'#3b82f6', MCS:'#a855f7', TSF:'#f43f5e', MG:'#16a34a'};
+  const SUB_ORDER  = ['MT', 'E', 'MCS', 'TSF'];
+  const SUB_LABELS = {MT:'Mata Technologies', E:'Ehrlich · Teams',
+                      MCS:'Mata Creative Services', TSF:'The Sandbox Foundation'};
+  const SUB_DEFAULT_CLIENTS = {
+    MT:  ['Mata Technologies', 'MT'],
+    E:   ['Teams (E)', 'Ehrlich'],
+    MCS: ['Services (MCS)', 'Mata Creative Services', 'MCS'],
+    TSF: ['TSF', 'The Sandbox Foundation', 'Sandbox Foundation'],
+  };
+
+  function renderDropdown(query) {
+    const q = (query || '').trim().toLowerCase();
+    const all = (window._icProjList || []);
+    const matches = all.filter(p => {
+      if (!q) return true;
+      const hay = (p.project + ' ' + (p.client || '') + ' ' + (p.subsidiary || '')).toLowerCase();
+      return hay.includes(q);
+    });
+    if (!matches.length) {
+      ttDropdown.innerHTML = '<div style="padding:var(--sp-14) var(--sp-16);color:var(--muted);font-size:var(--fs-md);text-align:center">No matching projects.</div>';
+      ttDropdown.style.display = 'block';
+      return;
+    }
+    const grouped = {};
+    matches.forEach(p => {
+      const sub = (p.subsidiary || '').trim();
+      if (!SUB_ORDER.includes(sub)) return;
+      (grouped[sub] = grouped[sub] || []).push(p);
+    });
+    const groupsHtml = SUB_ORDER.filter(s => grouped[s] && grouped[s].length).map(sub => {
+      const color = SUB_COLORS[sub];
+      const list  = grouped[sub];
+      const defClients = SUB_DEFAULT_CLIENTS[sub] || [];
+      const rows = list.map(p => {
+        const clientStr  = (p.client || '').trim();
+        const showClient = clientStr && !defClients.some(d => d.toLowerCase() === clientStr.toLowerCase());
+        const clientHtml = showClient ? '<span class="muted" style="font-size:var(--fs-sm);margin-left:6px">· ' + esc(clientStr) + '</span>' : '';
+        return '<div class="ic-tt-row" data-project="' + esc(p.project) + '" style="display:flex;align-items:baseline;gap:8px;padding:var(--sp-6) var(--sp-14) var(--sp-6) var(--sp-22);cursor:pointer;font-size:var(--fs-md);line-height:1.3">' +
+          '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.project) + clientHtml + '</span>' +
+          '<span class="muted" style="font-size:var(--fs-sm);font-variant-numeric:tabular-nums;min-width:54px;text-align:right">' + (p.total_hours || 0).toFixed(1) + 'h</span>' +
+        '</div>';
+      }).join('');
+      return '<div class="ic-tt-group">' +
+        '<div class="ic-tt-group-hd" style="position:sticky;top:0;z-index:2;background:var(--panel-muted);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:var(--sp-6) var(--sp-14);font-size:var(--fs-sm);font-weight:700;color:' + color + ';display:flex;align-items:center;gap:8px">' +
+          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + color + '"></span>' +
+          '<span>' + sub + ' &middot; ' + esc(SUB_LABELS[sub] || sub) + '</span>' +
+          '<span class="muted" style="margin-left:auto;font-weight:500">' + list.length + '</span>' +
+        '</div>' +
+        '<div class="ic-tt-group-body">' + rows + '</div>' +
+      '</div>';
+    }).join('');
+    ttDropdown.innerHTML = groupsHtml;
+    ttDropdown.querySelectorAll('.ic-tt-row').forEach(row => {
+      row.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        ttInput.value = row.dataset.project;
+        ttDropdown.style.display = 'none';
+        _incentiveState.project = row.dataset.project;
+        triggerCalc();
+      });
+      row.addEventListener('mouseenter', () => row.style.background = 'var(--hover)');
+      row.addEventListener('mouseleave', () => row.style.background = '');
+    });
+    ttDropdown.style.display = 'block';
+  }
+
+  ttInput.addEventListener('focus',  () => renderDropdown(ttInput.value));
+  ttInput.addEventListener('input',  () => { _incentiveState.project = ttInput.value; renderDropdown(ttInput.value); });
+  ttInput.addEventListener('blur',   () => setTimeout(() => { ttDropdown.style.display = 'none'; }, 150));
+  ttInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { ttDropdown.style.display = 'none'; ttInput.blur(); }
+    else if (e.key === 'Enter') { e.preventDefault(); ttDropdown.style.display = 'none'; triggerCalc(); }
+  });
+  ttClear.addEventListener('click', () => {
+    ttInput.value = '';
+    _incentiveState.project = '';
+    document.getElementById('ic-result').innerHTML = '';
+    ttInput.focus();
+    renderDropdown('');
+  });
+
+  document.getElementById('ic-clear-all-btn').addEventListener('click', () => {
+    _incentiveState.project    = '';
+    _incentiveState.multiplier = 1.5;
+    _incentiveState.amount     = 0;
+    _incentiveState.lastChanged = 'multiplier';
+    _incentiveState.lastItems   = null;
+    _incentiveState.lastProject = '';
+    document.getElementById('ic-result').innerHTML = '';
+    ttInput.value = '';
+    document.getElementById('ic-multiplier').value = '1.50';
+    document.getElementById('ic-amount').value     = '0.00';
+  });
+
+  async function triggerCalc() {
+    const proj = (ttInput.value || '').trim();
+    if (!proj) {
+      document.getElementById('ic-result').innerHTML =
+        '<div class="coming-soon-banner">Pick a project first.</div>';
+      return;
+    }
+    _incentiveState.project    = proj;
+    _incentiveState.multiplier = parseFloat(document.getElementById('ic-multiplier').value) || 1.0;
+    _incentiveState.amount     = parseFloat(document.getElementById('ic-amount').value)     || 0;
+    document.getElementById('ic-result').innerHTML = '<div class="empty">Calculating…</div>';
+    const qs = '/api/finance/incentive?project=' + encodeURIComponent(proj) +
+               '&multiplier=1.0&' + currentPeriodParam();
+    const data = await apiFetch(qs).catch(e => ({error: String(e)}));
+    if (data.error) {
+      document.getElementById('ic-result').innerHTML =
+        '<div class="coming-soon-banner">Error: ' + esc(data.error) + '</div>';
+      return;
+    }
+    _incentiveState.lastItems   = data.items || [];
+    _incentiveState.lastProject = proj;
+    renderIncentiveResult(data);
+  }
+
+  if (_incentiveState.project && ttInput.value === _incentiveState.project) {
+    triggerCalc();
+  }
+}
+
+// ── renderIncentiveResult (verbatim port from Panso ~6478) ───────────────────
+function renderIncentiveResult(data) {
+  const items         = data.items || [];
+  const noRate        = items.filter(x => x.is_fte && !x.has_rate);
+  const eligibleCount = items.filter(x => x.is_fte).length;
+  const ineligibleCount = items.length - eligibleCount;
+  const initialMult   = _incentiveState.multiplier || 1.5;
+  data.multiplier     = initialMult;
+  const totals        = {hours: 0, base: 0, incentive: 0};
+  items.forEach(it => {
+    it.incentive      = (it.has_rate && it.is_fte) ? (it.base * (initialMult - 1)) : 0;
+    totals.hours     += it.hours || 0;
+    totals.base      += (it.is_fte ? (it.base || 0) : 0);
+    totals.incentive += it.incentive || 0;
+  });
+  if (!items.length) {
+    document.getElementById('ic-result').innerHTML =
+      '<div class="coming-soon-banner">No hours logged on <strong>' + esc(data.project) +
+      '</strong> in this period.</div>';
+    return;
+  }
+  const ordered  = items.slice().sort((a, b) => (b.is_fte?1:0) - (a.is_fte?1:0));
+  const rowsHtml = ordered.map((it, i) => {
+    const fte      = !!it.is_fte;
+    const rateCell = it.has_rate ? '₱' + it.hourly_rate.toFixed(2)
+      : '<span class="muted" style="color:#b91c1c">— not in 201</span>';
+    const baseCell = it.has_rate ? '₱' + it.base.toFixed(2) : '<span class="muted">—</span>';
+    const incCell  = (fte && it.has_rate)
+      ? '<strong>₱' + it.incentive.toFixed(2) + '</strong>'
+      : '<span class="muted">—</span>';
+    const roleTag  = fte ? '' :
+      '<span style="margin-left:6px;font-size:var(--fs-9-5);font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:999px;padding:1px var(--sp-7);white-space:nowrap">not eligible · ' + esc(it.role || 'non-FTE') + '</span>';
+    const defChecked = (fte && it.has_rate) ? 'checked' : '';
+    const cbAttrs    = fte ? '' : 'disabled ';
+    const rowStyle   = fte ? '' : 'opacity:0.5;';
+    return '<tr data-row-idx="' + i + '" data-hours="' + it.hours + '" data-base="' + it.base + '" data-incentive="' + it.incentive + '" data-has-rate="' + (it.has_rate?1:0) + '" data-fte="' + (fte?1:0) + '" style="' + rowStyle + '">' +
+      '<td style="padding:var(--sp-8) var(--sp-12);text-align:center;width:32px"><input type="checkbox" class="ic-row-cb" ' + defChecked + ' ' + cbAttrs + ' style="accent-color:var(--good);cursor:' + (fte ? 'pointer' : 'not-allowed') + '"></td>' +
+      '<td style="padding:var(--sp-8) var(--sp-12)">' + esc(it.user_name) + roleTag + '<div class="muted" style="font-size:var(--fs-sm)">' + esc(it.user_email) + '</div></td>' +
+      '<td style="padding:var(--sp-8) var(--sp-12);text-align:right">' + it.hours.toFixed(2) + 'h</td>' +
+      '<td style="padding:var(--sp-8) var(--sp-12);text-align:right">' + rateCell + '</td>' +
+      '<td style="padding:var(--sp-8) var(--sp-12);text-align:right">' + baseCell + '</td>' +
+      '<td style="padding:var(--sp-8) var(--sp-12);text-align:right">' + incCell + '</td>' +
+      '</tr>';
+  }).join('');
+
+  let warning = '';
+  if (noRate.length) {
+    warning =
+      '<div class="coming-soon-banner" style="background:#fef3c7;border-color:#fcd34d;color:#78350f;margin-bottom:12px">' +
+        '<strong>⚠ ' + noRate.length + ' member' + (noRate.length === 1 ? '' : 's') + ' missing hourly rate</strong> in <code>people_extras</code> ' +
+        '(<em>' + noRate.map(x => esc(x.user_name)).join(', ') + '</em>). ' +
+        'Re-sync the 201 Roster bookmarklet. Column AU (Hourly) populates this. ' +
+        'Until then, those members are excluded from the incentive total.' +
+      '</div>';
+  }
+  document.getElementById('ic-result').innerHTML =
+    warning +
+    '<div class="ic-summary" style="display:flex;gap:22px;flex-wrap:wrap;align-items:baseline;margin-bottom:12px;padding:var(--sp-12) var(--sp-16);background:var(--panel-muted);border:1px solid var(--border);border-radius:8px">' +
+      '<div><div class="muted" style="font-size:var(--fs-10-5);">Selected FTEs</div><strong id="ic-sum-count" style="font-size:var(--fs-lg)">—</strong></div>' +
+      '<div><div class="muted" style="font-size:var(--fs-10-5);">Effective multiplier</div><strong id="ic-sum-mult" style="font-size:var(--fs-lg)">—</strong></div>' +
+      '<div style="margin-left:auto;text-align:right"><div class="muted" style="font-size:var(--fs-10-5);">Total incentive payout</div><strong id="ic-sum-total" style="font-size:var(--fs-20);color:var(--good)">—</strong></div>' +
+      (ineligibleCount ? '<div style="flex-basis:100%;font-size:var(--fs-sm);color:var(--muted);border-top:1px dashed var(--border);padding-top:8px;margin-top:2px">' + eligibleCount + ' eligible FTE' + (eligibleCount===1?'':'s') + ' · ' + ineligibleCount + ' non-FTE' + (ineligibleCount===1?'':'s') + ' (intern/PTF) shown but excluded from the payout.</div>' : '') +
+    '</div>' +
+    '<div style="background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:var(--fs-md)">' +
+        '<thead style="background:var(--panel-muted);border-bottom:1px solid var(--border)">' +
+          '<tr>' +
+            '<th style="padding:var(--sp-10) var(--sp-12);text-align:center;width:32px"><input type="checkbox" id="ic-cb-all" checked title="Toggle all" style="accent-color:var(--good);cursor:pointer"></th>' +
+            '<th style="padding:var(--sp-10) var(--sp-12);text-align:left;font-weight:600">Member</th>' +
+            '<th style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600">Hours</th>' +
+            '<th style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600">Hourly rate</th>' +
+            '<th style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600">Base (rate × hrs)</th>' +
+            '<th style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600" title="Bonus on top of base pay">Incentive<br><span class="muted" id="ic-inc-pct" style="font-weight:400;font-size:var(--fs-sm)">+' + ((data.multiplier - 1) * 100).toFixed(0) + '% of base</span></th>' +
+          '</tr>' +
+        '</thead>' +
+        '<tbody>' + rowsHtml + '</tbody>' +
+        '<tfoot style="background:var(--panel-muted);border-top:2px solid var(--border)">' +
+          '<tr>' +
+            '<td style="padding:var(--sp-10) var(--sp-12);text-align:center"></td>' +
+            '<td style="padding:var(--sp-10) var(--sp-12);font-weight:600" id="ic-tot-label">Total · ' + items.length + ' member' + (items.length === 1 ? '' : 's') + '</td>' +
+            '<td style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600" id="ic-tot-hours">' + totals.hours.toFixed(2) + 'h</td>' +
+            '<td></td>' +
+            '<td style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600" id="ic-tot-base">₱' + totals.base.toFixed(2) + '</td>' +
+            '<td style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:700;color:var(--good)" id="ic-tot-incentive">₱' + totals.incentive.toFixed(2) + '</td>' +
+          '</tr>' +
+        '</tfoot>' +
+      '</table>' +
+    '</div>' +
+    '<div class="muted" style="font-size:var(--fs-sm);margin-top:10px;text-align:right">' +
+      esc(data.policy_note || '') +
+    '</div>';
+
+  function recomputeTotals() {
+    const rows    = document.querySelectorAll('#ic-result tbody tr');
+    const checked = [];
+    rows.forEach(tr => {
+      const cb = tr.querySelector('.ic-row-cb');
+      if (!cb || !cb.checked) return;
+      if (tr.dataset.fte !== '1') return;
+      checked.push({tr, base: parseFloat(tr.dataset.base) || 0, hours: parseFloat(tr.dataset.hours) || 0});
+    });
+    const sumBase  = checked.reduce((a, x) => a + x.base,  0);
+    const sumHours = checked.reduce((a, x) => a + x.hours, 0);
+    let m, sumIncentive;
+    if (_incentiveState.lastChanged === 'amount') {
+      const target = parseFloat(document.getElementById('ic-amount').value) || 0;
+      if (sumBase > 0) {
+        m            = 1 + (target / sumBase);
+        sumIncentive = target;
+      } else {
+        m            = NaN;
+        sumIncentive = 0;
+      }
+      const mInput = document.getElementById('ic-multiplier');
+      if (mInput) mInput.value = isNaN(m) ? '' : m.toFixed(2);
+      if (!isNaN(m)) _incentiveState.multiplier = m;
+    } else {
+      m            = parseFloat(document.getElementById('ic-multiplier').value) || 1.0;
+      sumIncentive = sumBase * (m - 1);
+      _incentiveState.multiplier = m;
+      const aInput = document.getElementById('ic-amount');
+      if (aInput) aInput.value = sumIncentive.toFixed(2);
+      _incentiveState.amount = sumIncentive;
+    }
+    rows.forEach(tr => {
+      const cb      = tr.querySelector('.ic-row-cb');
+      const hasRate = tr.dataset.hasRate === '1';
+      const base    = parseFloat(tr.dataset.base) || 0;
+      const incCell = tr.querySelector('td:last-child');
+      if (!incCell) return;
+      if (!hasRate) {
+        incCell.innerHTML = '<span class="muted">—</span>';
+      } else if (cb && cb.checked && !isNaN(m)) {
+        const v = base * (m - 1);
+        incCell.innerHTML = '<strong>₱' + v.toFixed(2) + '</strong>';
+      } else {
+        incCell.innerHTML = '<span class="muted">—</span>';
+      }
+    });
+    const totalInc = isNaN(m) ? 0 : (sumBase * (m - 1));
+    document.getElementById('ic-tot-label').textContent =
+      'Total · ' + checked.length + ' FTE' + (checked.length === 1 ? '' : 's') + ' selected';
+    document.getElementById('ic-tot-hours').textContent     = sumHours.toFixed(2) + 'h';
+    document.getElementById('ic-tot-base').textContent      = '₱' + sumBase.toFixed(2);
+    document.getElementById('ic-tot-incentive').textContent = isNaN(m) ? '—' : ('₱' + totalInc.toFixed(2));
+    const sumCount = document.getElementById('ic-sum-count');
+    const sumMult  = document.getElementById('ic-sum-mult');
+    const sumTotal = document.getElementById('ic-sum-total');
+    if (sumCount) sumCount.textContent = String(checked.length);
+    if (sumMult)  sumMult.textContent  = isNaN(m) ? '—' : (m.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1') + '×');
+    if (sumTotal) sumTotal.textContent = isNaN(m) ? '—' : ('₱' + totalInc.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}));
+    const incPct = document.getElementById('ic-inc-pct');
+    if (incPct) incPct.textContent = isNaN(m) ? '+0% of base' : ('+' + ((m - 1) * 100).toFixed(0) + '% of base');
+  }
+
+  const amtInput = document.getElementById('ic-amount');
+  if (amtInput) amtInput.addEventListener('input', () => {
+    _incentiveState.lastChanged = 'amount'; recomputeTotals();
+  });
+  const mulInput = document.getElementById('ic-multiplier');
+  if (mulInput) mulInput.addEventListener('input', () => {
+    _incentiveState.lastChanged = 'multiplier'; recomputeTotals();
+  });
+  document.querySelectorAll('.ic-row-cb').forEach(cb => cb.addEventListener('change', recomputeTotals));
+  const cbAll = document.getElementById('ic-cb-all');
+  if (cbAll) {
+    cbAll.addEventListener('change', () => {
+      document.querySelectorAll('.ic-row-cb').forEach(cb => { if (!cb.disabled) cb.checked = cbAll.checked; });
+      recomputeTotals();
+    });
+  }
+  recomputeTotals();
+}
+
+// ── Bootstrap ───────────────────────────────────────────────────────────────
+(async function () {
+  let fbCfg;
+  try {
+    fbCfg = await fetch('/api/firebase-config').then(r => r.json());
+  } catch (e) {
+    document.getElementById('loading-wall').textContent = 'Could not reach server.';
+    return;
+  }
+  firebase.initializeApp(fbCfg);
+  const auth = firebase.auth();
+
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      window.location.href = '/';
+      return;
+    }
+    _currentUser = user;
+    document.getElementById('user-chip').textContent = user.email;
+
+    // Fetch periods
+    let periodsData;
+    try {
+      periodsData = await apiFetch('/api/periods');
+    } catch (e) {
+      document.getElementById('loading-wall').textContent = 'Error loading periods.';
+      return;
+    }
+    STATE.periods = periodsData;
+
+    // Populate period pickers
+    const typeSelect  = document.getElementById('period-type');
+    const valueSelect = document.getElementById('period-value');
+
+    function populatePeriodValues(type) {
+      const list = (STATE.periods[type] || []).slice().reverse(); // newest first
+      valueSelect.innerHTML = list.map(p =>
+        '<option value="' + esc(p.value) + '">' + esc(p.label) + '</option>'
+      ).join('');
+      // Default to current pay period (first in list = latest)
+      if (list.length) {
+        STATE.period.type  = type;
+        STATE.period.value = list[0].value;
+        valueSelect.value  = list[0].value;
+      }
+    }
+
+    populatePeriodValues(typeSelect.value);
+
+    typeSelect.addEventListener('change', () => {
+      _incentiveState.lastItems = null;
+      populatePeriodValues(typeSelect.value);
+      document.getElementById('ic-result').innerHTML = '';
+    });
+    valueSelect.addEventListener('change', () => {
+      STATE.period.type  = typeSelect.value;
+      STATE.period.value = valueSelect.value;
+      _incentiveState.lastItems = null;
+      document.getElementById('ic-result').innerHTML = '';
+    });
+    document.getElementById('period-reload-btn').addEventListener('click', () => {
+      STATE.period.type  = typeSelect.value;
+      STATE.period.value = valueSelect.value;
+      renderFinanceIncentive('MG - Finance');
+    });
+
+    // Show shell, hide loading wall
+    document.getElementById('loading-wall').style.display = 'none';
+    document.getElementById('shell').style.display        = 'block';
+
+    // Render the tool
+    renderFinanceIncentive('MG - Finance');
+  });
+})();
+</script>
+</body>
+</html>
