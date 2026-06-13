@@ -24,8 +24,14 @@ steps:
       - '--port=8080'
       - '--add-volume=name=panso-data,type=cloud-storage,bucket=panso-ph-data,readonly=true'
       - '--add-volume-mount=volume=panso-data,mount-path=/data'
-      - '--set-env-vars=PANSO_ROOT=/data,FIREBASE_PROJECT_ID=panso-ph,FIREBASE_API_KEY=FIREBASE_API_KEY_REMOVED,FIREBASE_AUTH_DOMAIN=panso-ph.firebaseapp.com,FIREBASE_STORAGE_BUCKET=panso-ph.firebasestorage.app,FIREBASE_MESSAGING_SENDER_ID=965834933814,FIREBASE_APP_ID=1:965834933814:web:44debe4e06d118164bba97'
+      - '--set-env-vars=PANSO_ROOT=/data,FIREBASE_PROJECT_ID=panso-ph,FIREBASE_API_KEY=${_FIREBASE_API_KEY},FIREBASE_AUTH_DOMAIN=panso-ph.firebaseapp.com,FIREBASE_STORAGE_BUCKET=panso-ph.firebasestorage.app,FIREBASE_MESSAGING_SENDER_ID=965834933814,FIREBASE_APP_ID=1:965834933814:web:44debe4e06d118164bba97'
       - '--service-account=panso-api@panso-ph.iam.gserviceaccount.com'
+
+# _FIREBASE_API_KEY is supplied at build time so the key is not stored in this repo.
+# Set it on the Cloud Build trigger (Console > Cloud Build > Triggers > Edit > Substitution variables),
+# or pass it manually: gcloud builds submit --substitutions=_FIREBASE_API_KEY=<key>
+substitutions:
+  _FIREBASE_API_KEY: ''
 
 images:
   - 'asia-southeast1-docker.pkg.dev/panso-ph/cloud-run-source-deploy/mata-tools-api'
