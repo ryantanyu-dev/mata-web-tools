@@ -11,7 +11,7 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 | 02 | Mobile responsive layout | qa-passed | 2eae35e | mata-tools-api-00011-pds | QA 2026-06-14: all 8 gates green |
 | 03 | Mobile card view | qa-passed | c7e8432 | mata-tools-api-00013-q2k | QA 2026-06-14: all 8 gates green |
 | 04 | Data freshness indicator | qa-passed | 43224d4 | mata-tools-api-00015-42k | QA 2026-06-14: all 7 gates green (incl. empty-state footer fix at 43224d4) |
-| 05 | Port Workload Matrix | pending | — | — | standalone tool port — independent of 01–04; runnable in its own session |
+| 05 | Port Workload Matrix | qa-passed | 6b2ab74 | mata-tools-api-00016-rkc | QA 2026-06-14: parity exact (28 proj, 8 users, 561.0h vs Panso); all gates green |
 | 06 | Incentive UI polish | qa-passed | f5f5371 | — (hosting only) | QA 2026-06-14: all 4 gates green; × btn 20px, inputs ±2px aligned, caption exact |
 | 07 | Restore login (empty Firebase apiKey) | qa-passed | b80923a | mata-tools-api-00011-pds | Fixed in same deploy as 01; confirmed signed in + data loading 2026-06-14 |
 
@@ -19,7 +19,7 @@ Status values: `pending` → `in-progress` → `built` → `qa-passed` / `qa-fai
 
 ## Current active task
 
-**Next: Task 05** (Port Workload Matrix) — standalone tool port, no dependencies. All incentive tasks (01–04, 06, 07) are qa-passed.
+**All tasks qa-passed.** Queue complete as of 2026-06-14. Tasks 01–07 all green.
 
 ## Diagnosis summary (Opus, 2026-06-13)
 
