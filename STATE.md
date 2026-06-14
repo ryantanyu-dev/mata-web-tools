@@ -12,14 +12,14 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 | 03 | Mobile card view | qa-passed | c7e8432 | mata-tools-api-00013-q2k | QA 2026-06-14: all 8 gates green |
 | 04 | Data freshness indicator | qa-passed | 43224d4 | mata-tools-api-00015-42k | QA 2026-06-14: all 7 gates green (incl. empty-state footer fix at 43224d4) |
 | 05 | Port Workload Matrix | pending | — | — | standalone tool port — independent of 01–04; runnable in its own session |
-| 06 | Incentive UI polish | pending | — | — | 3 fixes (bigger × button, align step1/step2, caption text); depends on 02 QA-passed |
+| 06 | Incentive UI polish | qa-passed | f5f5371 | — (hosting only) | QA 2026-06-14: all 4 gates green; × btn 20px, inputs ±2px aligned, caption exact |
 | 07 | Restore login (empty Firebase apiKey) | qa-passed | b80923a | mata-tools-api-00011-pds | Fixed in same deploy as 01; confirmed signed in + data loading 2026-06-14 |
 
 Status values: `pending` → `in-progress` → `built` → `qa-passed` / `qa-fail`
 
 ## Current active task
 
-**Next: Task 06** (incentive UI polish, depends on 02 ✅) — 3 fixes: bigger × button, align step1/step2, caption text. Task 05 (Workload Matrix) also unblocked and standalone.
+**Next: Task 05** (Port Workload Matrix) — standalone tool port, no dependencies. All incentive tasks (01–04, 06, 07) are qa-passed.
 
 ## Diagnosis summary (Opus, 2026-06-13)
 
