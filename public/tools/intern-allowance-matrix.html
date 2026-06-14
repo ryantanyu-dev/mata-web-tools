@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pay Matrix · Mata Web Tools</title>
+<title>Intern Allowance Matrix · Mata Web Tools</title>
 <style>
   :root {
     --bg:#ffffff; --border:#e5e5e7;
@@ -45,7 +45,7 @@
                      font:inherit;font-size:var(--fs-md)}
   .muted{color:var(--muted)}
   .empty{color:var(--muted);padding:var(--sp-16);text-align:center}
-  /* ── Pay Matrix layout ── */
+  /* ── Intern Allowance Matrix layout ── */
   .pm-wrap{padding:var(--sp-4) 0 24px}
   .pm-hd{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:8px}
   .pm-stats{display:flex;gap:8px;flex-wrap:wrap}
@@ -85,7 +85,7 @@
 <div id="shell">
   <div class="shell-hd">
     <a class="back-link" href="/">← Tools</a>
-    <div class="shell-title">MG-HR · Pay Matrix</div>
+    <div class="shell-title">MG-HR · Intern Allowance Matrix</div>
     <div class="user-chip" id="user-chip"></div>
   </div>
 
@@ -152,7 +152,7 @@ function currentPeriodLabel() {
   return hit ? hit.label : (STATE.period.value || '');
 }
 
-// ── Pay Matrix renderers ─────────────────────────────────────────────────────
+// ── Intern Allowance Matrix renderers ─────────────────────────────────────────────────────
 const _SECTION_COLORS = ['#f97316','#8b5cf6','#0ea5e9','#16a34a','#f43f5e','#ca8a04','#14b8a6','#6366f1'];
 
 function renderPayRow(it, sectionColor) {
@@ -234,7 +234,7 @@ function renderHrPayMatrix(data) {
     '<div class="pm-hd">' +
       '<div>' +
         '<div style="font-size:var(--fs-18);font-weight:700">' +
-          'Pay Matrix <span class="muted" style="font-weight:400;font-size:var(--fs-14)">· ' + esc(periodLbl) + '</span>' +
+          'Intern Allowance Matrix <span class="muted" style="font-weight:400;font-size:var(--fs-14)">· ' + esc(periodLbl) + '</span>' +
         '</div>' +
         '<div style="font-size:var(--fs-sm);color:var(--muted);margin-top:4px">' +
           'Policy ' + esc(policy.policy_no || '002502') + ' v' + esc(policy.version || '1.1') +

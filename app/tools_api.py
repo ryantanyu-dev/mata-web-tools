@@ -54,7 +54,7 @@ DATA_DIR    = ROOT / "data"
 ENTRIES_CSV = DATA_DIR / "time-entries.csv"
 MANUAL_CSV  = DATA_DIR / "manual.csv"
 CFG           = ROOT / "config.json"
-ALPHALISTS_DIR = DATA_DIR / "alphalists"
+ALPHALISTS_DIR = ROOT / "alphalists"
 
 # Static files served from public/ (sibling of app/)
 PUBLIC_DIR = Path(_HERE).parent / "public"
@@ -897,10 +897,8 @@ class Handler(BaseHTTPRequestHandler):
                 }, origin=origin)
 
             if u.path == "/api/hr/interns/pay":
-                try:
-                    gate_request(tier_info, require_comp=True)
-                except AccessDenied as exc:
-                    return self._send_json({"error": exc.message}, exc.status, origin=origin)
+                if not can_access_scope(tier_info, "dept::MG - HR"):
+                    return self._send_json({"error": "Restricted to MG - HR."}, 403, origin=origin)
                 params = parse_qs(u.query)
                 rows, meta = load_rows_for_period(params)
                 if rows is None:
@@ -1057,10 +1055,8 @@ class Handler(BaseHTTPRequestHandler):
                 }, origin=origin)
 
             if u.path == "/api/hr/interns":
-                try:
-                    gate_request(tier_info, require_comp=True)
-                except AccessDenied as exc:
-                    return self._send_json({"error": exc.message}, exc.status, origin=origin)
+                if not can_access_scope(tier_info, "dept::MG - HR"):
+                    return self._send_json({"error": "Restricted to MG - HR."}, 403, origin=origin)
                 interns_csv = ALPHALISTS_DIR / "export_interns.csv"
                 if not interns_csv.exists():
                     return self._send_json({"error": "alphalists/export_interns.csv missing — refresh from the Payroll 2026 sheet"}, 404, origin=origin)
@@ -1213,10 +1209,8 @@ class Handler(BaseHTTPRequestHandler):
                     "source":        "alphalists/export_interns.csv",
                 }, origin=origin)
             if u.path == "/api/leaves":
-                try:
-                    gate_request(tier_info, require_comp=True)
-                except AccessDenied as exc:
-                    return self._send_json({"error": exc.message}, exc.status, origin=origin)
+                if not can_access_scope(tier_info, "dept::MG - HR"):
+                    return self._send_json({"error": "Restricted to MG - HR."}, 403, origin=origin)
                 params = parse_qs(u.query)
                 date_from = params.get("date_from", [None])[0]
                 date_to   = params.get("date_to",   [None])[0]
@@ -1266,10 +1260,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json({"items": items, "period": meta}, origin=origin)
 
             if u.path == "/api/hr/dates":
-                try:
-                    gate_request(tier_info, require_comp=True)
-                except AccessDenied as exc:
-                    return self._send_json({"error": exc.message}, exc.status, origin=origin)
+                if not can_access_scope(tier_info, "dept::MG - HR"):
+                    return self._send_json({"error": "Restricted to MG - HR."}, 403, origin=origin)
                 params = parse_qs(u.query)
                 try:
                     year  = int(params.get("year",  [""])[0])
