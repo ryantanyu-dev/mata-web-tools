@@ -502,9 +502,14 @@ async function renderFinanceIncentive(name) {
     // Merge by user_email: sum hours + base across projects
     var byEmail     = {};
     var policyNotes = [];
+    var maxDataAsOf = null;
     results.forEach(function(data) {
       if (data.policy_note && !policyNotes.includes(data.policy_note))
         policyNotes.push(data.policy_note);
+      if (data.data_as_of) {
+        if (!maxDataAsOf || data.data_as_of > maxDataAsOf)
+          maxDataAsOf = data.data_as_of;
+      }
       (data.items || []).forEach(function(item) {
         var k = (item.user_email || '').toLowerCase();
         if (!byEmail[k]) {
@@ -520,6 +525,7 @@ async function renderFinanceIncentive(name) {
       items:       Object.values(byEmail),
       project:     label,
       policy_note: policyNotes.join(' '),
+      data_as_of:  maxDataAsOf,
     };
     _incentiveState.lastItems   = merged.items;
     _incentiveState.lastProject = merged.project;
@@ -652,8 +658,11 @@ function renderIncentiveResult(data) {
     '</div>' +
     '</div>' +
     '<div id="ic-cards">' + cardsHtml + '</div>' +
-    '<div class="muted" style="font-size:var(--fs-sm);margin-top:10px;text-align:right">' +
-      esc(data.policy_note || '') +
+    '<div class="muted" style="font-size:var(--fs-sm);margin-top:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">' +
+      '<span>' + esc(data.policy_note || '') + '</span>' +
+      (data.data_as_of
+        ? '<span>Data as of ' + esc(data.data_as_of) + '</span>'
+        : '<span style="color:#b91c1c">⚠ No entries found in this period</span>') +
     '</div>';
 
   function recomputeTotals() {
