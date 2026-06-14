@@ -46,7 +46,7 @@
   .period-bar label{font-size:var(--fs-sm);font-weight:600;color:var(--muted)}
   .period-bar select{padding:var(--sp-6) var(--sp-8);border:1px solid var(--border);
                      border-radius:6px;background:var(--input-bg);color:var(--text);
-                     font:inherit;font-size:var(--fs-md)}
+                     font:inherit;font-size:var(--fs-md);min-width:200px}
   .ic-wrap{padding:0}
   .ic-hd{margin-bottom:var(--sp-12)}
   .ic-title{font-size:var(--fs-18);font-weight:700}
@@ -61,6 +61,43 @@
   /* ── Steps grid: inputs align on same row ── */
   .ic-steps{display:grid;grid-template-columns:3fr 2fr;grid-template-rows:auto auto;
             column-gap:20px;row-gap:6px;margin-top:12px}
+  /* ── Mobile responsive (≤ 640px) ── */
+  @media (max-width: 640px) {
+    #shell {
+      padding: var(--sp-16) var(--sp-16);
+    }
+    .shell-hd {
+      gap: var(--sp-8);
+      margin-bottom: var(--sp-16);
+    }
+    .period-bar {
+      gap: var(--sp-8);
+      padding: var(--sp-10) var(--sp-12);
+    }
+    .period-bar select {
+      min-width: 0;
+      flex: 1;
+      max-width: 100%;
+    }
+    /* Stack Steps to a single column */
+    .ic-steps {
+      grid-template-columns: 1fr;
+      row-gap: 10px;
+    }
+    /* Re-order the 4 grid children for logical single-column flow */
+    .ic-steps > div:nth-child(1) { order: 1; } /* Step 1 label + sub filters */
+    .ic-steps > div:nth-child(2) { order: 3; } /* Step 2 label */
+    .ic-steps > div:nth-child(3) { order: 2; } /* Project search input */
+    .ic-steps > div:nth-child(4) { order: 4; } /* Multiplier + Amount + Clear */
+    /* Summary bar: stack the total below the counts on very narrow screens */
+    .ic-summary {
+      gap: 12px;
+    }
+    .ic-summary > div:last-of-type {
+      margin-left: 0;
+      text-align: left;
+    }
+  }
 </style>
 </head>
 <body>
@@ -80,7 +117,7 @@
       <option value="week">Week</option>
       <option value="month">Month</option>
     </select>
-    <select id="period-value" style="min-width:200px">
+    <select id="period-value">
       <option>Loading…</option>
     </select>
     <button id="period-reload-btn"
@@ -329,8 +366,10 @@ async function renderFinanceIncentive(name) {
 
     ttDropdown.innerHTML = groupsHtml;
     ttDropdown.querySelectorAll('.ic-tt-row').forEach(function(row) {
-      row.addEventListener('mousedown', function(e) {
-        e.preventDefault(); // keep focus on input so dropdown stays open
+      // Use 'click' (fires on both mouse and touch) instead of 'mousedown'
+      row.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         var proj = row.dataset.project;
         var idx  = _incentiveState.projects.indexOf(proj);
         if (idx === -1) {
@@ -339,16 +378,17 @@ async function renderFinanceIncentive(name) {
           _incentiveState.projects.splice(idx, 1);
         }
         _incentiveState.project = _incentiveState.projects[0] || '';
-        renderDropdown(ttInput._searchVal || ''); // re-render to update checkmarks
+        renderDropdown(ttInput._searchVal || '');
         triggerCalc();
       });
+      // Mouse hover (desktop only — ignored on touch, that's fine)
       row.addEventListener('mouseenter', function() {
-        var isSel = _incentiveState.projects.includes(row.dataset.project);
-        if (!isSel) row.style.background = 'var(--hover)';
+        if (!_incentiveState.projects.includes(row.dataset.project))
+          row.style.background = 'var(--hover)';
       });
       row.addEventListener('mouseleave', function() {
-        var isSel = _incentiveState.projects.includes(row.dataset.project);
-        if (!isSel) row.style.background = '';
+        if (!_incentiveState.projects.includes(row.dataset.project))
+          row.style.background = '';
       });
     });
     ttDropdown.style.display = 'block';
@@ -371,7 +411,7 @@ async function renderFinanceIncentive(name) {
       ttDropdown.style.display = 'none';
       ttInput._searchVal = '';
       updateInputDisplay();
-    }, 150);
+    }, 250);  // was 150 — increased for click latency on slow devices
   });
   ttInput.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') { ttDropdown.style.display = 'none'; ttInput.blur(); }
@@ -525,7 +565,8 @@ function renderIncentiveResult(data) {
       (ineligibleCount ? '<div style="flex-basis:100%;font-size:var(--fs-sm);color:var(--muted);border-top:1px dashed var(--border);padding-top:8px;margin-top:2px">' + eligibleCount + ' eligible FTE' + (eligibleCount===1?'':'s') + ' · ' + ineligibleCount + ' non-FTE' + (ineligibleCount===1?'':'s') + ' (intern/PTF) shown but excluded from the payout.</div>' : '') +
     '</div>' +
     '<div style="background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden">' +
-      '<table style="width:100%;border-collapse:collapse;font-size:var(--fs-md)">' +
+      '<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">' +
+      '<table style="width:100%;min-width:560px;border-collapse:collapse;font-size:var(--fs-md)">' +
         '<thead style="background:var(--panel-muted);border-bottom:1px solid var(--border)">' +
           '<tr>' +
             '<th style="padding:var(--sp-10) var(--sp-12);text-align:center;width:32px"><input type="checkbox" id="ic-cb-all" checked title="Toggle all" style="accent-color:var(--good);cursor:pointer"></th>' +
@@ -548,6 +589,7 @@ function renderIncentiveResult(data) {
           '</tr>' +
         '</tfoot>' +
       '</table>' +
+      '</div>' +
     '</div>' +
     '<div class="muted" style="font-size:var(--fs-sm);margin-top:10px;text-align:right">' +
       esc(data.policy_note || '') +

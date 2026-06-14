@@ -8,7 +8,7 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 | # | Task | Status | Commit | CR revision | Notes |
 |---|------|--------|--------|-------------|-------|
 | 01 | Fix period default | qa-passed | b80923a | mata-tools-api-00011-pds | QA 2026-06-14: all 6 gates green |
-| 02 | Mobile responsive layout | pending | — | — | depends on 01 QA-passed |
+| 02 | Mobile responsive layout | built | — | — | built 2026-06-14; awaiting deploy + QA |
 | 03 | Mobile card view | pending | — | — | depends on 02 QA-passed |
 | 04 | Data freshness indicator | pending | — | — | depends on 01 QA-passed |
 | 05 | Port Workload Matrix | pending | — | — | standalone tool port — independent of 01–04; runnable in its own session |
