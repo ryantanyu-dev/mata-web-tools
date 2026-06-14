@@ -250,7 +250,7 @@ async function renderFinanceIncentive(name) {
         '<h2 class="ic-title">Incentive Calculator <span class="muted" style="font-weight:400;font-size:var(--fs-14)">· ' + esc(currentPeriodLabel()) + '</span></h2>' +
         '<div class="ic-how" style="margin-top:4px;padding:var(--sp-8) var(--sp-12);background:var(--panel);border:1px solid var(--border);border-radius:8px;font-size:var(--fs-base);color:var(--muted)">' +
           '<code style="font-size:var(--fs-sm)">incentive = hourly_rate × hours × (multiplier − 1)</code>' +
-          ' · 1× = base only; 1.5× = +50%; 2× = double pay. Only FTEs qualify. Multiplier is applied at project close.' +
+          ' · 1× = base only (no incentive); 1.5× = +50%; 2× = double pay, 3x = triple pay. Only FTEs qualify. Multiplier is applied at set schedule.' +
         '</div>' +
       '</div>' +
       '<div class="ic-steps">' +
@@ -274,8 +274,9 @@ async function renderFinanceIncentive(name) {
 
         // ── Row 2, Col 1: Project search input ──
         '<div style="position:relative">' +
+          '<div style="font-size:var(--fs-sm);margin-bottom:4px;visibility:hidden;user-select:none" aria-hidden="true">Project</div>' +
           '<input type="text" id="ic-project-input" autocomplete="off" placeholder="Type to search, or click to browse…" style="width:100%;padding:var(--sp-9) var(--sp-30) var(--sp-9) var(--sp-12);border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);font:inherit;box-sizing:border-box">' +
-          '<button type="button" id="ic-project-clear" title="Clear" style="position:absolute;right:6px;top:7px;padding:var(--sp-2) var(--sp-8);background:transparent;border:none;cursor:pointer;color:var(--muted);font-size:var(--fs-14)">×</button>' +
+          '<button type="button" id="ic-project-clear" title="Clear" style="position:absolute;right:6px;bottom:7px;padding:2px 10px;background:transparent;border:none;cursor:pointer;color:var(--muted);font-size:20px;line-height:1">×</button>' +
           '<div id="ic-project-dropdown" style="display:none;position:absolute;top:44px;left:0;right:0;max-height:360px;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:1000;padding:0"></div>' +
         '</div>' +
 
