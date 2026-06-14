@@ -7,18 +7,19 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 
 | # | Task | Status | Commit | CR revision | Notes |
 |---|------|--------|--------|-------------|-------|
-| 01 | Fix period default | pending | — | — | — |
+| 01 | Fix period default | qa-passed | b80923a | mata-tools-api-00011-pds | QA 2026-06-14: all 6 gates green |
 | 02 | Mobile responsive layout | pending | — | — | depends on 01 QA-passed |
 | 03 | Mobile card view | pending | — | — | depends on 02 QA-passed |
 | 04 | Data freshness indicator | pending | — | — | depends on 01 QA-passed |
+| 05 | Port Workload Matrix | pending | — | — | standalone tool port — independent of 01–04; runnable in its own session |
+| 06 | Incentive UI polish | pending | — | — | 3 fixes (bigger × button, align step1/step2, caption text); depends on 02 QA-passed |
+| 07 | Restore login (empty Firebase apiKey) | qa-passed | b80923a | mata-tools-api-00011-pds | Fixed in same deploy as 01; confirmed signed in + data loading 2026-06-14 |
 
 Status values: `pending` → `in-progress` → `built` → `qa-passed` / `qa-fail`
 
 ## Current active task
 
-**01 — Fix period default.** Not yet started.
-
-Read `sonnet/00_README.md` for the queue contract, then `sonnet/01_fix-period-default.md`.
+**02 — Mobile responsive layout.** Task 01 QA-passed 2026-06-14. Next: run `sonnet/02_mobile-responsive-layout.md`.
 
 ## Diagnosis summary (Opus, 2026-06-13)
 
