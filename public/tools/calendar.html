@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HR Calendar · Mata Web Tools</title>
+<style>
+  :root {
+    --bg:#ffffff; --border:#e5e5e7;
+    --text:#1d1d1f; --muted:#6e6e73;
+    --hover:#ececee; --good:#16a34a;
+    --panel:#ffffff; --panel-muted:#fafafa;
+    --fs-xs:10px; --fs-sm:11px; --fs-base:12px; --fs-md:13px; --fs-18:18px;
+    --sp-2:2px; --sp-4:4px; --sp-5:5px; --sp-6:6px; --sp-7:7px;
+    --sp-8:8px; --sp-10:10px; --sp-12:12px; --sp-16:16px; --sp-24:24px;
+  }
+  html[data-theme="dark"] {
+    --bg:#0f1115; --border:#2a2d36; --text:#e5e7eb; --muted:#9ca3af;
+    --panel:#14161c; --panel-muted:#181b22;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+       background:var(--bg);color:var(--text);font-size:var(--fs-base);line-height:1.5}
+  #loading-wall{display:flex;align-items:center;justify-content:center;min-height:100vh;color:var(--muted);font-size:var(--fs-md)}
+  #shell{display:none;max-width:1200px;margin:0 auto;padding:var(--sp-24)}
+  .shell-hd{display:flex;align-items:center;gap:var(--sp-16);margin-bottom:var(--sp-24);flex-wrap:wrap}
+  .back-link{font-size:var(--fs-sm);color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:4px}
+  .back-link:hover{color:var(--text)}
+  .shell-title{font-size:var(--fs-18);font-weight:700;flex:1}
+  .user-chip{font-size:var(--fs-sm);color:var(--muted)}
+  .muted{color:var(--muted)}
+  .empty{color:var(--muted);padding:var(--sp-10);text-align:center}
+  .banner{padding:var(--sp-12) var(--sp-16);background:var(--panel-muted);border:1px solid var(--border);border-radius:8px;font-size:var(--fs-md);color:var(--muted)}
+  /* ── Calendar CSS (verbatim from Panso index.html ~862) ── */
+  .hrc-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+  .hrc-month-block{margin-bottom:28px}
+  .hrc-month-lbl{font-size:var(--fs-md);font-weight:600;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+  .hrc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .hrc-hd{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:center;padding:var(--sp-4) 0 6px;font-weight:600}
+  .hrc-cell{min-height:80px;border:1px solid var(--border);border-radius:6px;padding:var(--sp-5) var(--sp-6);display:flex;flex-direction:column;gap:3px;background:#fff;cursor:pointer;transition:background .1s}
+  .hrc-cell:hover{background:var(--hover)}
+  .hrc-cell.is-other{background:#fafafa;opacity:.55}
+  .hrc-cell.is-today{border-color:var(--good);box-shadow:inset 0 0 0 1px var(--good)}
+  .hrc-cell.is-weekend{background:#fbfbfd}
+  .hrc-cell.is-weekend.is-other{background:#f5f5f7}
+  .hrc-cell .hrc-dnum{font-size:var(--fs-sm);font-weight:600;color:var(--text);line-height:1;margin-bottom:3px}
+  .hrc-cell.is-other .hrc-dnum{color:#c5c5c8}
+  .hrc-cell.hrc-selected{outline:2px solid var(--text);outline-offset:-2px}
+  .hrc-entry{font-size:var(--fs-xs);padding:var(--sp-2) var(--sp-4);border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help;position:relative}
+  .hrc-entry.hrc-leave         {background:#fef3c7;color:#78350f}
+  .hrc-entry.hrc-birthday      {background:#fce7f3;color:#9d174d}
+  .hrc-entry.hrc-milestone     {background:#dbeafe;color:#1e3a8a}
+  .hrc-entry.hrc-regularization{background:#ffe4e6;color:#9f1239;border-left:2px solid #f43f5e;font-weight:600}
+  .hrc-entry.hrc-more          {background:#e5e7eb;color:#626267}
+  .coming-soon-banner{padding:var(--sp-24);border:1px dashed var(--border);border-radius:10px;color:var(--muted);text-align:left;background:#fafafa}
+  html[data-theme="dark"] .hrc-cell{background:var(--panel);border-color:var(--border)}
+  html[data-theme="dark"] .hrc-cell.is-other{background:var(--panel-muted)}
+  html[data-theme="dark"] .hrc-entry.hrc-more{background:var(--panel-muted);color:var(--muted)}
+  /* ── Tooltip ── */
+  .hrc-pop{display:none;position:fixed;z-index:9999;min-width:220px;max-width:320px;
+           background:#1f2937;color:#f3f4f6;border-radius:8px;padding:var(--sp-10) var(--sp-12);
+           box-shadow:0 12px 36px rgba(0,0,0,.35);font-size:var(--fs-sm);line-height:1.4;pointer-events:none}
+  .hrc-pop .ddp-hd{font-weight:700;font-size:var(--fs-base);color:#fff}
+  .hrc-pop .ddp-sub{color:#9ca3af;font-size:var(--fs-xs);margin-top:1px;margin-bottom:4px}
+  .hrc-pop .ddp-t-name{color:#f9fafb;font-weight:500;margin-top:4px}
+  .hrc-pop .ddp-t-desc{color:#cbd5e1;margin-top:2px;font-size:var(--fs-xs)}
+</style>
+</head>
+<body>
+<div id="loading-wall">Loading…</div>
+
+<div id="shell">
+  <div class="shell-hd">
+    <a class="back-link" href="/">← Tools</a>
+    <div class="shell-title">MG-HR · Calendar</div>
+    <div class="user-chip" id="user-chip"></div>
+  </div>
+  <div id="dept-body"></div>
+</div>
+<div id="hrc-pop" class="hrc-pop"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+function esc(s) {
+  return (s||'').toString().replace(/[&<>"']/g,
+    c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function isoLocal(d) {
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+}
+
+let _cachedToken = null, _tokenExpiry = 0, _currentUser = null;
+async function getToken() {
+  if (_currentUser && Date.now() < _tokenExpiry - 60000) return _cachedToken;
+  if (!_currentUser) return null;
+  _cachedToken = await _currentUser.getIdToken(true);
+  _tokenExpiry = Date.now() + 55 * 60 * 1000;
+  return _cachedToken;
+}
+async function apiFetch(path) {
+  const tok = await getToken();
+  return fetch(path, tok ? {headers:{'Authorization':'Bearer '+tok}} : {}).then(r=>r.json());
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+const pop = document.getElementById('hrc-pop');
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('.hrc-entry[data-pop]');
+  if (!el) { pop.style.display='none'; return; }
+  pop.innerHTML = el.dataset.pop;
+  pop.style.display = 'block';
+  const r = el.getBoundingClientRect();
+  let x = r.right + 8, y = r.top;
+  if (x + 340 > window.innerWidth) x = r.left - 340;
+  if (y + pop.offsetHeight > window.innerHeight) y = window.innerHeight - pop.offsetHeight - 8;
+  pop.style.left = Math.max(4,x) + 'px';
+  pop.style.top  = Math.max(4,y) + 'px';
+});
+document.addEventListener('mouseout', e => {
+  if (!e.target.closest('.hrc-entry[data-pop]')) pop.style.display='none';
+});
+
+// ── Calendar render (verbatim from Panso renderHrCalendar) ────────────────────
+async function loadCalendar() {
+  const body = document.getElementById('dept-body');
+  body.innerHTML = '<div class="empty">Loading calendar…</div>';
+  const today = new Date();
+  const anchorYear  = today.getFullYear();
+  const anchorMonth = today.getMonth();
+  const rangeStart = new Date(anchorYear, anchorMonth, 1);
+  const rangeEnd   = new Date(anchorYear, anchorMonth + 3, 0);
+  const fmt = d => d.toISOString().slice(0,10);
+  let leavesData;
+  try {
+    leavesData = await apiFetch('/api/leaves?date_from='+fmt(rangeStart)+'&date_to='+fmt(rangeEnd));
+  } catch(_) { leavesData = {items:[]}; }
+  const leaves = (leavesData && leavesData.items) || [];
+  const hrFetches = [0,1,2].map(i => {
+    const m = new Date(anchorYear, anchorMonth+i, 1);
+    return apiFetch('/api/hr/dates?year='+m.getFullYear()+'&month='+(m.getMonth()+1))
+      .catch(()=>({items:[]}));
+  });
+  const [hd0, hd1, hd2] = await Promise.all(hrFetches);
+  const datedEvents = [
+    ...((hd0&&hd0.items)||[]),
+    ...((hd1&&hd1.items)||[]),
+    ...((hd2&&hd2.items)||[]),
+  ];
+  const byDate = {};
+  leaves.forEach(l => {
+    const k = l.date||''; if(!k) return;
+    (byDate[k]=byDate[k]||[]).push({kind:'leave', label:l.user_name||l.user_email, full:l});
+  });
+  datedEvents.forEach(ev => {
+    const k = ev.date||''; if(!k) return;
+    if (ev.kind==='milestone' && ev.emp_level && ev.emp_level!=='fte') return;
+    (byDate[k]=byDate[k]||[]).push({kind:ev.kind, label:ev.user_name||ev.user_email||'', full:ev});
+  });
+  const todayIso = isoLocal(new Date());
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  function buildMonthGrid(year, month) {
+    const first = new Date(year, month, 1);
+    const last  = new Date(year, month+1, 0);
+    const gridStart = new Date(first); gridStart.setDate(first.getDate()-first.getDay());
+    const gridEnd   = new Date(last);  gridEnd.setDate(last.getDate()+(6-last.getDay()+7)%7);
+    let bdayC=0, anniC=0, leaveC=0;
+    let cells = dayNames.map(d=>'<div class="hrc-hd">'+d+'</div>').join('');
+    for (let d=new Date(gridStart); d<=gridEnd; d.setDate(d.getDate()+1)) {
+      const iso     = isoLocal(d);
+      const inMonth = d.getMonth()===month;
+      const isToday = iso===todayIso;
+      const weekend = d.getDay()===0||d.getDay()===6;
+      const entries = byDate[iso]||[];
+      let cls='hrc-cell';
+      if(!inMonth) cls+=' is-other';
+      if(isToday)  cls+=' is-today';
+      if(weekend)  cls+=' is-weekend';
+      if(inMonth){ bdayC+=entries.filter(e=>e.kind==='birthday').length; anniC+=entries.filter(e=>e.kind==='milestone').length; leaveC+=entries.filter(e=>e.kind==='leave').length; }
+      const entryHtml = entries.slice(0,4).map(e=>{
+        const isReg = e.kind==='regularization';
+        const typeClass = isReg?'hrc-regularization':(e.kind==='birthday'?'hrc-birthday':e.kind==='milestone'?'hrc-milestone':'hrc-leave');
+        const icon = isReg?'🎓':(e.kind==='birthday'?'🎂':e.kind==='milestone'?'🏅':'🏝');
+        const f = e.full||{};
+        const tail=[];
+        if(e.kind==='leave'){
+          if(f.kind)        tail.push('<div class="ddp-t-name">'+esc(f.kind)+'</div>');
+          if(f.description) tail.push('<div class="ddp-t-desc">'+esc(f.description.slice(0,200))+'</div>');
+          if(f.emp_type)    tail.push('<div class="ddp-sub" style="font-style:italic;margin-top:2px">'+esc(f.emp_type)+' Employee</div>');
+          tail.push('<div class="ddp-sub" style="margin-top:6px">'+(f.hours||0).toFixed(1)+'h · '+esc(f.date||iso)+'</div>');
+        } else if(e.kind==='birthday'){
+          if(f.age)      tail.push('<div class="ddp-t-name">Turns '+esc(String(f.age))+'</div>');
+          if(f.emp_type) tail.push('<div class="ddp-sub" style="font-style:italic;margin-top:2px">'+esc(f.emp_type)+' Employee</div>');
+          tail.push('<div class="ddp-sub" style="margin-top:4px">'+esc(f.date||iso)+'</div>');
+        } else if(e.kind==='milestone'){
+          if(f.years) tail.push('<div class="ddp-t-name">'+esc(String(f.years))+'-year work anniversary (FTE)</div>');
+          tail.push('<div class="ddp-sub" style="margin-top:4px">Hired '+esc(f.hire_date||'')+'</div>');
+        } else if(isReg){
+          tail.push('<div class="ddp-t-name" style="color:#f43f5e">Regularization</div>');
+          tail.push('<div class="ddp-sub" style="margin-top:4px">FTE start: '+esc(f.sdate_fte||'')+'</div>');
+        }
+        const popHtml = '<div class="ddp-hd">'+icon+' '+esc(f.user_name||f.user_email||e.label)+'</div>'+(f.user_email?'<div class="ddp-sub">'+esc(f.user_email)+'</div>':'')+tail.join('');
+        return '<div class="hrc-entry '+typeClass+'" data-pop="'+esc(popHtml)+'">'+icon+' '+esc(e.label)+'</div>';
+      }).join('');
+      const overflow = entries.length>4?'<div class="hrc-entry hrc-more">+'+(entries.length-4)+'</div>':'';
+      cells += '<div class="'+cls+'" data-date="'+iso+'"><div class="hrc-dnum">'+d.getDate()+'</div>'+entryHtml+overflow+'</div>';
+    }
+    return {cells, bdayC, anniC, leaveC};
+  }
+
+  const months = [0,1,2].map(i=>{
+    const m = new Date(anchorYear, anchorMonth+i, 1);
+    const label = m.toLocaleString('en-US',{month:'long',year:'numeric'});
+    const {cells,bdayC,anniC,leaveC} = buildMonthGrid(m.getFullYear(), m.getMonth());
+    return {label,cells,bdayC,anniC,leaveC};
+  });
+  const totalLeaves=months.reduce((s,m)=>s+m.leaveC,0);
+  const totalBdays =months.reduce((s,m)=>s+m.bdayC,0);
+  const totalAnnis =months.reduce((s,m)=>s+m.anniC,0);
+  const totalRegs  =datedEvents.filter(ev=>ev.kind==='regularization').length;
+  const noBirthdays=(totalBdays+totalAnnis)===0;
+  const emptyBanner = noBirthdays
+    ? '<div class="coming-soon-banner" style="margin-top:12px"><strong>Birthdays &amp; Work anniversaries</strong> are empty for this period. If you expected entries, make sure the Payroll 2026 sheet has been imported via <strong>Control Panel → 201 Roster</strong> with Birthday and Hire Date columns mapped.</div>'
+    : '';
+  const gridsHtml = months.map(m=>
+    '<div class="hrc-month-block">' +
+      '<div class="hrc-month-lbl"><strong>'+esc(m.label)+'</strong> <span class="muted" style="font-size:var(--fs-sm)">· '+m.leaveC+' leave'+(m.bdayC?' · 🎂 '+m.bdayC:'')+(m.anniC?' · 🏅 '+m.anniC:'')+'</span></div>' +
+      '<div class="hrc-grid">'+m.cells+'</div>' +
+    '</div>'
+  ).join('');
+
+  function buildDetailHtml(dateIso) {
+    const evs = byDate[dateIso]||[];
+    if(!evs.length) return '<div class="muted" style="padding:var(--sp-10) 0">No events on '+dateIso+'.</div>';
+    return evs.map(e=>{
+      const isReg=e.kind==='regularization';
+      const icon=isReg?'🎓':(e.kind==='birthday'?'🎂':e.kind==='milestone'?'🏅':'🏝');
+      const f=e.full||{};
+      let detail='';
+      if(e.kind==='leave')       detail=(f.kind||'')+(f.hours?' · '+(f.hours||0).toFixed(1)+'h':'');
+      else if(e.kind==='birthday') detail=f.age?'Turns '+f.age:'';
+      else if(e.kind==='milestone') detail=(f.years?f.years+'-yr FTE anniversary':'Work anniversary');
+      else if(isReg) detail='<span style="color:#f43f5e;font-weight:600">Regularization</span>'+(f.sdate_fte?' (FTE: '+f.sdate_fte+')':'');
+      return '<div style="padding:var(--sp-7) 0;border-bottom:1px solid var(--border)"><div style="font-weight:500">'+icon+' '+esc(e.label)+'</div>'+(detail?'<div class="muted" style="font-size:var(--fs-base);margin-top:2px">'+detail+'</div>':'')+'</div>';
+    }).join('');
+  }
+
+  const initialDate = todayIso;
+  body.innerHTML =
+    '<div class="hrc-header">' +
+      '<div><strong>3-Month Calendar</strong> <span class="muted" style="font-size:var(--fs-base)">· '+totalLeaves+' leave · '+totalBdays+' birthday (all) · '+totalAnnis+' anniversary (FTE)'+(totalRegs?' · 🎓 '+totalRegs+' regularization':'')+'</span></div>' +
+      '<div class="muted" style="font-size:var(--fs-sm)">🏝 Leave · 🎂 Birthday · 🏅 Work anniversary (FTE) · 🎓 Regularization</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:20px;align-items:flex-start">' +
+      '<div style="flex:3;min-width:0">'+gridsHtml+'</div>' +
+      '<div id="hrc-detail" style="flex:1;min-width:180px;max-width:260px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:var(--sp-12);position:sticky;top:12px">' +
+        '<div style="font-size:var(--fs-sm);font-weight:700;color:var(--muted);margin-bottom:8px" id="hrc-detail-date">'+initialDate+'</div>' +
+        '<div id="hrc-detail-body">'+buildDetailHtml(initialDate)+'</div>' +
+      '</div>' +
+    '</div>' + emptyBanner;
+
+  body.querySelectorAll('.hrc-cell[data-date]').forEach(cell=>{
+    cell.addEventListener('click',()=>{
+      const d=cell.dataset.date;
+      document.getElementById('hrc-detail-date').textContent=d;
+      document.getElementById('hrc-detail-body').innerHTML=buildDetailHtml(d);
+      body.querySelectorAll('.hrc-cell.hrc-selected').forEach(c=>c.classList.remove('hrc-selected'));
+      cell.classList.add('hrc-selected');
+    });
+  });
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────────────
+(async function() {
+  let fbCfg;
+  try { fbCfg = await fetch('/api/firebase-config').then(r=>r.json()); }
+  catch(e) { document.getElementById('loading-wall').textContent='Could not reach server.'; return; }
+  firebase.initializeApp(fbCfg);
+  firebase.auth().onAuthStateChanged(async function(user) {
+    if (!user) { window.location.href='/'; return; }
+    _currentUser = user;
+    document.getElementById('user-chip').textContent = user.email;
+    document.getElementById('loading-wall').style.display = 'none';
+    document.getElementById('shell').style.display = 'block';
+    loadCalendar();
+  });
+})();
+</script>
+</body>
+</html>

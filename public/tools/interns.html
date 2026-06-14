@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interns Dashboard · Mata Web Tools</title>
+<style>
+  :root {
+    --bg:#ffffff; --border:#e5e5e7;
+    --text:#1d1d1f; --muted:#6e6e73;
+    --hover:#ececee; --active-bg:#1d1d1f; --active-fg:#ffffff;
+    --panel:#ffffff; --panel-muted:#fafafa; --input-bg:#ffffff;
+    --fs-2xs:9px; --fs-xs:10px; --fs-10-5:10.5px;
+    --fs-sm:11px; --fs-base:12px; --fs-md:13px; --fs-14:14px;
+    --fs-15:15px; --fs-lg:16px; --fs-18:18px;
+    --sp-2:2px; --sp-3:3px; --sp-4:4px; --sp-6:6px;
+    --sp-7:7px; --sp-8:8px; --sp-10:10px; --sp-12:12px;
+    --sp-16:16px; --sp-24:24px;
+  }
+  html[data-theme="dark"] {
+    --bg:#0f1115; --border:#2a2d36;
+    --text:#e5e7eb; --muted:#9ca3af;
+    --hover:#1e222a; --active-bg:#e5e7eb; --active-fg:#0f1115;
+    --panel:#14161c; --panel-muted:#181b22; --input-bg:#0f1115;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+       background:var(--bg);color:var(--text);font-size:var(--fs-base);line-height:1.5}
+  #loading-wall{display:flex;align-items:center;justify-content:center;
+                min-height:100vh;color:var(--muted);font-size:var(--fs-md)}
+  #shell{display:none;max-width:1200px;margin:0 auto;padding:var(--sp-24)}
+  .shell-hd{display:flex;align-items:center;gap:var(--sp-16);margin-bottom:var(--sp-24);flex-wrap:wrap}
+  .back-link{font-size:var(--fs-sm);color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:4px}
+  .back-link:hover{color:var(--text)}
+  .shell-title{font-size:var(--fs-18);font-weight:700;flex:1}
+  .user-chip{font-size:var(--fs-sm);color:var(--muted)}
+  .muted{color:var(--muted)}
+  .empty{color:var(--muted);padding:var(--sp-16);text-align:center}
+  .banner{padding:var(--sp-12) var(--sp-16);background:var(--panel-muted);
+          border:1px solid var(--border);border-radius:8px;font-size:var(--fs-md);color:var(--muted)}
+  /* ── Interns CSS (verbatim from Panso index.html ~884) ── */
+  .hri-header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .hri-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:16px}
+  .hri-stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:var(--sp-8) var(--sp-10);display:flex;flex-direction:column;gap:2px;cursor:pointer}
+  .hri-stat.is-active{box-shadow:0 0 0 2px var(--active-bg);border-color:var(--active-bg)}
+  .hri-stat-num{font-size:var(--fs-18);font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+  .hri-stat-lbl{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600}
+  .hri-stat-btn{background:transparent;border:0;padding:0;font:inherit;text-align:left;cursor:pointer;width:100%;display:flex;flex-direction:column;gap:2px}
+  .hri-stat.b-completed .hri-stat-num{color:#15803d}
+  .hri-stat.b-final .hri-stat-num{color:#16a34a}
+  .hri-stat.b-mid .hri-stat-num{color:#ca8a04}
+  .hri-stat.b-early .hri-stat-num{color:#ea580c}
+  .hri-stat.b-stalled .hri-stat-num{color:#b91c1c}
+  .hri-stat.b-not_started .hri-stat-num{color:#9ca3af}
+  .hri-mgr-group{margin-bottom:18px}
+  .hri-mgr-hd{display:flex;align-items:baseline;gap:10px;padding:var(--sp-6) var(--sp-10);background:#f3f4f6;border-radius:6px;margin-bottom:8px}
+  .hri-mgr-name{font-size:var(--fs-md);font-weight:600}
+  .hri-mgr-count{font-size:var(--fs-sm);color:var(--muted)}
+  .hri-mgr-avg{font-size:var(--fs-sm);color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+  .hri-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+  .hri-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:var(--sp-10) var(--sp-12);display:flex;flex-direction:column;gap:6px;transition:box-shadow .12s ease}
+  .hri-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);border-color:#d1d5db}
+  .hri-card-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .hri-card-name{font-size:var(--fs-md);font-weight:600;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hri-card-pct{font-size:var(--fs-md);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hri-card-email{font-size:var(--fs-xs);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hri-bar{height:6px;background:#f0f0f2;border-radius:3px;overflow:hidden}
+  .hri-bar-fill{height:100%;border-radius:3px;transition:width .18s ease}
+  .hri-bar-fill.b-completed{background:#15803d}
+  .hri-bar-fill.b-final{background:#16a34a}
+  .hri-bar-fill.b-mid{background:#ca8a04}
+  .hri-bar-fill.b-early{background:#ea580c}
+  .hri-bar-fill.b-stalled{background:#b91c1c}
+  .hri-bar-fill.b-not_started{background:#d1d5db}
+  .hri-card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:var(--fs-sm);color:var(--muted)}
+  .hri-pill{font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.4px;padding:var(--sp-2) var(--sp-7);border-radius:999px;font-weight:700;white-space:nowrap;border:1px solid}
+  .hri-pill.b-completed{background:#dcfce7;color:#15803d;border-color:#86efac}
+  .hri-pill.b-final{background:#dcfce7;color:#166534;border-color:#4ade80}
+  .hri-pill.b-mid{background:#fef9c3;color:#854d0e;border-color:#fde047}
+  .hri-pill.b-early{background:#ffedd5;color:#9a3412;border-color:#fdba74}
+  .hri-pill.b-stalled{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+  .hri-pill.b-not_started{background:#f3f4f6;color:#4b5563;border-color:#d1d5db}
+  .hri-pill.b-no_target{background:#fff3cd;color:#856404;border-color:#f0ad4e}
+  .hri-card-last{font-size:var(--fs-xs);color:var(--muted)}
+  .hri-card-last.is-warn{color:#b91c1c}
+  .hri-card.hri-card-warn{border-color:#f0ad4e;box-shadow:inset 0 0 0 1px #f0ad4e}
+  .hri-empty-group{padding:var(--sp-6) var(--sp-10);font-size:var(--fs-sm);color:var(--muted);font-style:italic}
+  html[data-theme="dark"] .hri-stat,.hri-card{background:var(--panel);border-color:var(--border)}
+  html[data-theme="dark"] .hri-mgr-hd{background:var(--panel-muted)}
+  html[data-theme="dark"] .hri-bar{background:var(--panel-muted)}
+</style>
+</head>
+<body>
+<div id="loading-wall">Loading…</div>
+
+<div id="shell">
+  <div class="shell-hd">
+    <a class="back-link" href="/">← Tools</a>
+    <div class="shell-title">MG-HR · Interns Dashboard</div>
+    <div class="user-chip" id="user-chip"></div>
+  </div>
+  <div id="dept-body"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+function esc(s) {
+  return (s || '').toString().replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function isoLocal(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+
+let _cachedToken = null, _tokenExpiry = 0, _currentUser = null;
+async function getToken() {
+  if (_currentUser && Date.now() < _tokenExpiry - 60000) return _cachedToken;
+  if (!_currentUser) return null;
+  _cachedToken = await _currentUser.getIdToken(true);
+  _tokenExpiry = Date.now() + 55 * 60 * 1000;
+  return _cachedToken;
+}
+async function apiFetch(path) {
+  const tok  = await getToken();
+  const hdrs = tok ? { 'Authorization': 'Bearer ' + tok } : {};
+  return fetch(path, { headers: hdrs }).then(r => r.json());
+}
+
+const _COLORS = ['#f97316','#8b5cf6','#0ea5e9','#16a34a','#f43f5e','#ca8a04','#14b8a6','#6366f1'];
+let _periods = null;
+let _filter  = null;   // null | bucket string
+let _view    = 'cards'; // 'cards' | 'gantt'
+let _lastData = null;
+
+const BUCKET_LABEL = {
+  completed:'Completed', final:'Final', mid:'Mid', early:'Early',
+  stalled:'Stalled', not_started:'Not started', no_target:'No target set',
+};
+const BUCKET_ORDER = ['completed','final','mid','early','stalled','not_started'];
+
+function renderCard(it, color) {
+  const bucket  = it.status_bucket;
+  const noTarget= !!it.target_missing;
+  const pct     = noTarget ? 0 : Math.max(0, Math.min(100, it.pct_capped || 0));
+  const lastNote = (() => {
+    if (noTarget || bucket === 'not_started') return 'Never logged';
+    if (it.days_since_last == null) return '';
+    if (it.days_since_last === 0) return 'Active today';
+    if (it.days_since_last === 1) return '1 day ago';
+    return it.days_since_last + ' days ago';
+  })();
+  const lastWarn   = (!noTarget && it.days_since_last != null && it.days_since_last > 14) ? ' is-warn' : '';
+  const firstNote  = it.first_date
+    ? 'Started ' + it.first_date + ' · ' + it.days_active + ' active day' + (it.days_active === 1 ? '' : 's')
+    : (noTarget ? 'Target not set in 201 col AF' : 'Not started');
+  const targetWarn = noTarget
+    ? '<div style="background:#fff3cd;border:1px solid #f0ad4e;border-radius:4px;padding:2px 8px;font-size:var(--fs-sm);margin-bottom:4px;color:#856404">⚠ Target not set. Update 201 col AF.</div>'
+    : '';
+  const targetLabel = noTarget
+    ? '<span class="muted">—h</span>'
+    : (it.hours_logged||0).toFixed(1)+'h <span class="muted">/ '+(it.target_hours||0).toFixed(0)+'h</span>';
+  const pctLabel = noTarget ? '—' : (it.pct||0).toFixed(0) + '%';
+  return '<div class="hri-card' + (noTarget?' hri-card-warn':'') + '" title="' + esc(firstNote) + '">' +
+    targetWarn +
+    '<div class="hri-card-row">' +
+      '<div class="hri-card-name" style="color:' + (color||'var(--text)') + '">' + esc(it.name||it.email) + '</div>' +
+      '<div class="hri-card-pct">' + pctLabel + '</div>' +
+    '</div>' +
+    '<div class="hri-card-email">' + esc(it.email) + '</div>' +
+    '<div class="hri-bar">' +
+      (noTarget
+        ? '<div class="hri-bar-fill" style="width:100%;background:repeating-linear-gradient(45deg,#f8d7da,#f8d7da 4px,#fff 4px,#fff 8px)"></div>'
+        : '<div class="hri-bar-fill b-' + bucket + '" style="width:' + pct.toFixed(1) + '%"></div>') +
+    '</div>' +
+    '<div class="hri-card-foot">' +
+      '<span style="font-variant-numeric:tabular-nums">' + targetLabel + '</span>' +
+      '<span class="hri-pill b-' + bucket + '">' + esc(BUCKET_LABEL[bucket]||bucket) + '</span>' +
+    '</div>' +
+    '<div class="hri-card-last' + lastWarn + '">' + esc(lastNote) + '</div>' +
+  '</div>';
+}
+
+function renderInterns(data) {
+  const body = document.getElementById('dept-body');
+  const items        = data.items || [];
+  const stats        = data.stats || {};
+  const byManager    = data.by_manager || {};
+  const managerOrder = data.manager_order || Object.keys(byManager);
+
+  const mkStatBtn = (bucket, num) =>
+    '<button type="button" class="hri-stat-btn" data-bucket="' + bucket + '">' +
+      '<span class="hri-stat-num">' + num + '</span>' +
+      '<span class="hri-stat-lbl">' + (BUCKET_LABEL[bucket]||bucket) + '</span>' +
+    '</button>';
+
+  const noTargetPill = (stats.no_target||0) > 0
+    ? '<div class="hri-stat b-no_target' + (_filter==='no_target'?' is-active':'') + '" style="background:#fff3cd;border:1px solid #f0ad4e">' +
+        mkStatBtn('no_target', stats.no_target) + '</div>' : '';
+
+  const statsHtml =
+    '<div class="hri-stats">' +
+      '<div class="hri-stat b-total' + (_filter===null?' is-active':'') + '" data-bucket="">' +
+        '<span class="hri-stat-num">' + (stats.total||0) + '</span>' +
+        '<span class="hri-stat-lbl">Interns</span>' +
+      '</div>' +
+      BUCKET_ORDER.map(b =>
+        '<div class="hri-stat b-' + b + (_filter===b?' is-active':'') + '">' +
+          mkStatBtn(b, stats[b]||0) +
+        '</div>'
+      ).join('') +
+      noTargetPill +
+      '<div class="hri-stat b-avg">' +
+        '<span class="hri-stat-num">' + (stats.avg_pct||0).toFixed(1) + '%</span>' +
+        '<span class="hri-stat-lbl">Avg progress</span>' +
+      '</div>' +
+    '</div>';
+
+  const filterBanner = _filter
+    ? ' · <button type="button" id="hri-clear" style="border:0;background:none;color:var(--muted);font:inherit;cursor:pointer;text-decoration:underline">Clear</button>'
+    : '';
+  const headerHtml =
+    '<div class="hri-header">' +
+      '<div><strong>Intern progress</strong> <span class="muted">· target from 201 col AF · grouped by supervisor</span>' + filterBanner + '</div>' +
+      '<button type="button" id="hri-view-toggle" style="padding:2px 10px;border:1px solid var(--border);border-radius:999px;cursor:pointer;font-size:var(--fs-sm);font-weight:600;background:transparent;color:var(--muted)">' +
+        (_view === 'gantt' ? '⊞ Cards' : '▬ Gantt') + '</button>' +
+    '</div>';
+
+  let viewBody;
+  if (_view === 'gantt') {
+    const ppList = (_periods && _periods.payperiod) || [];
+    const todayIso = isoLocal(new Date());
+    const allFirst = items.map(x => x.first_date).filter(Boolean).sort();
+    const earliest = allFirst[0] || todayIso;
+    const visPP    = ppList.filter(p => p.end >= earliest && p.start <= todayIso).slice(-12);
+    if (!visPP.length) {
+      viewBody = '<div class="muted" style="padding:var(--sp-10)">No pay periods for Gantt view.</div>';
+    } else {
+      const hdrs = visPP.map(p =>
+        '<th style="min-width:60px;font-size:var(--fs-xs);font-weight:600;text-align:center;padding:2px 4px;white-space:nowrap;color:var(--muted)">' +
+          esc((p.label||p.value||'').replace(/^\d{4}-/,'')) + '</th>'
+      ).join('');
+      const rows = managerOrder.map((mgr, gi) => {
+        const col = _COLORS[gi % _COLORS.length];
+        const grp = (byManager[mgr]||[]).filter(it => !_filter || it.status_bucket===_filter || (_filter==='no_target'&&it.target_missing));
+        if (!grp.length) return '';
+        const mgrRow = '<tr><td colspan="' + (visPP.length+1) + '" style="background:' + col + '18;border-left:3px solid ' + col + ';padding:2px 8px;font-size:var(--fs-sm);font-weight:700;color:' + col + '">' + esc(mgr) + '</td></tr>';
+        const irows = grp.map(it => {
+          const cells = visPP.map(p => {
+            const inRange = it.first_date && p.end >= it.first_date && p.start <= todayIso;
+            if (!inRange) return '<td style="border-right:1px solid var(--border)"></td>';
+            const pct = it.target_missing ? 0 : Math.min(100, it.pct_capped||0);
+            return '<td style="padding:2px;border-right:1px solid var(--border)">' +
+              '<div style="height:14px;background:var(--border);border-radius:2px;overflow:hidden">' +
+                '<div class="hri-bar-fill b-' + it.status_bucket + '" style="width:' + pct.toFixed(0) + '%;height:100%"></div>' +
+              '</div></td>';
+          }).join('');
+          return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:2px 8px;white-space:nowrap;font-size:var(--fs-base);min-width:140px">' +
+            '<span style="color:' + col + ';font-weight:500">' + esc(it.name||it.email) + '</span>' +
+            '<div class="muted" style="font-size:var(--fs-xs)">' + (it.target_missing?'—h':(it.hours_logged||0).toFixed(0)+'/'+(it.target_hours||0).toFixed(0)+'h') + '</div></td>' + cells + '</tr>';
+        }).join('');
+        return mgrRow + irows;
+      }).join('');
+      viewBody = '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:var(--fs-base)">' +
+        '<thead><tr><th style="min-width:140px;padding:4px 8px;text-align:left;font-size:var(--fs-sm);color:var(--muted)">Intern</th>' + hdrs + '</tr></thead>' +
+        '<tbody>' + (rows || '<tr><td colspan="99" class="empty" style="padding:var(--sp-10)">No interns match filter.</td></tr>') + '</tbody></table></div>';
+    }
+  } else {
+    viewBody = managerOrder.map((mgr, gi) => {
+      const col  = _COLORS[gi % _COLORS.length];
+      const list = (byManager[mgr]||[]).filter(it => !_filter || it.status_bucket===_filter || (_filter==='no_target'&&it.target_missing));
+      if (!list.length && _filter) return '';
+      const total = (byManager[mgr]||[]).length;
+      const avg   = total ? (byManager[mgr]||[]).reduce((s,x)=>s+(x.pct||0),0)/total : 0;
+      return '<div class="hri-mgr-group">' +
+        '<div class="hri-mgr-hd" style="border-left:3px solid ' + col + '">' +
+          '<div class="hri-mgr-name" style="color:' + col + '">' + esc(mgr) + '</div>' +
+          '<div class="hri-mgr-count">' + total + ' intern' + (total===1?'':'s') + '</div>' +
+          '<div class="hri-mgr-avg">avg ' + avg.toFixed(0) + '%</div>' +
+        '</div>' +
+        (list.length
+          ? '<div class="hri-cards">' + list.map(it => renderCard(it, col)).join('') + '</div>'
+          : '<div class="hri-empty-group">No interns match the filter.</div>') +
+      '</div>';
+    }).join('') || '<div class="empty">No interns match the current filter.</div>';
+  }
+
+  body.innerHTML = statsHtml + headerHtml + viewBody;
+
+  body.querySelectorAll('.hri-stat[data-bucket], .hri-stat-btn[data-bucket]').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const b = el.dataset.bucket || '';
+      _filter = (b && b !== _filter) ? b : null;
+      renderInterns(_lastData);
+    });
+  });
+  const tog = document.getElementById('hri-view-toggle');
+  if (tog) tog.addEventListener('click', () => { _view = _view==='gantt'?'cards':'gantt'; renderInterns(_lastData); });
+  const clr = document.getElementById('hri-clear');
+  if (clr) clr.addEventListener('click', () => { _filter = null; renderInterns(_lastData); });
+}
+
+async function loadInterns() {
+  const body = document.getElementById('dept-body');
+  body.innerHTML = '<div class="empty">Loading interns…</div>';
+  try {
+    const data = await apiFetch('/api/hr/interns');
+    if (data.error) {
+      body.innerHTML = '<div class="banner">' + esc(data.error) + '</div>';
+      return;
+    }
+    if (!(data.items||[]).length) {
+      body.innerHTML = '<div class="banner">No interns found in <code>alphalists/export_interns.csv</code>.</div>';
+      return;
+    }
+    _lastData = data;
+    renderInterns(data);
+  } catch (e) {
+    body.innerHTML = '<div class="banner">Error: ' + esc(String(e)) + '</div>';
+  }
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────────────
+(async function () {
+  let fbCfg;
+  try {
+    fbCfg = await fetch('/api/firebase-config').then(r => r.json());
+  } catch (e) {
+    document.getElementById('loading-wall').textContent = 'Could not reach server.';
+    return;
+  }
+  firebase.initializeApp(fbCfg);
+  firebase.auth().onAuthStateChanged(async function(user) {
+    if (!user) { window.location.href = '/'; return; }
+    _currentUser = user;
+    document.getElementById('user-chip').textContent = user.email;
+    // Fetch periods for Gantt view (silent — no period picker shown)
+    try { _periods = await apiFetch('/api/periods'); } catch(_) {}
+    document.getElementById('loading-wall').style.display = 'none';
+    document.getElementById('shell').style.display        = 'block';
+    loadInterns();
+  });
+})();
+</script>
+</body>
+</html>

@@ -148,22 +148,31 @@
       name:   'HR Calendar',
       dept:   'MG - HR',
       grant:  'dept::MG - HR',
-      url:    null,
-      live:   false,
+      url:    '/tools/calendar.html',
+      live:   true,
     },
     {
       name:   'Interns Dashboard',
       dept:   'MG - HR',
       grant:  'dept::MG - HR',
-      url:    null,
-      live:   false,
+      url:    '/tools/interns.html',
+      live:   true,
     },
     {
       name:   'Pay Matrix',
       dept:   'MG - HR',
       grant:  'dept::MG - HR',
-      url:    null,
-      live:   false,
+      url:    '/tools/pay-matrix.html',
+      live:   true,
+    },
+    {
+      name:     'Policies',
+      dept:     'All · everyone',
+      grant:    null,
+      public:   true,
+      external: true,
+      url:      'https://mata-policies.web.app',
+      live:     true,
     },
     {
       name:   'Workload Matrix',
@@ -189,6 +198,7 @@
   ];
 
   function canSee(tool, me) {
+    if (tool.public) return true;            // public:true → visible to all signed-in users
     if (me.is_admin) return true;
     if (!tool.grant) return false;           // grant=null → admin-only until scoped
     return (me.grants || []).includes(tool.grant);
@@ -210,7 +220,9 @@
         ? '<span class="tool-badge live">Live</span>'
         : '<span class="tool-badge">Coming soon</span>';
       if (t.live && t.url) {
-        return `<a class="tool-card" href="${t.url}">
+        const isExt = t.external || /^https?:\/\//.test(t.url);
+        const extAttrs = isExt ? ' target="_blank" rel="noopener noreferrer"' : '';
+        return `<a class="tool-card" href="${t.url}"${extAttrs}>
           <div class="tool-name">${esc(t.name)}</div>
           <div class="tool-dept">${esc(t.dept)}</div>
           ${badge}

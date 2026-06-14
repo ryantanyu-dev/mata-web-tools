@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pay Matrix · Mata Web Tools</title>
+<style>
+  :root {
+    --bg:#ffffff; --border:#e5e5e7;
+    --text:#1d1d1f; --muted:#6e6e73;
+    --hover:#ececee; --active-bg:#1d1d1f; --active-fg:#ffffff;
+    --good:#16a34a; --warn:#ca8a04;
+    --panel:#ffffff; --panel-muted:#fafafa; --input-bg:#ffffff;
+    --fs-2xs:9px; --fs-xs:10px; --fs-10-5:10.5px; --fs-12-5:12.5px;
+    --fs-sm:11px; --fs-base:12px; --fs-md:13px; --fs-14:14px;
+    --fs-15:15px; --fs-lg:16px; --fs-18:18px; --fs-20:20px;
+    --sp-2:2px; --sp-3:3px; --sp-4:4px; --sp-6:6px;
+    --sp-8:8px; --sp-10:10px; --sp-12:12px; --sp-16:16px;
+    --sp-24:24px;
+  }
+  html[data-theme="dark"] {
+    --bg:#0f1115; --border:#2a2d36;
+    --text:#e5e7eb; --muted:#9ca3af;
+    --hover:#1e222a; --active-bg:#e5e7eb; --active-fg:#0f1115;
+    --good:#22c55e; --warn:#eab308;
+    --panel:#14161c; --panel-muted:#181b22; --input-bg:#0f1115;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+       background:var(--bg);color:var(--text);font-size:var(--fs-base);line-height:1.5}
+  #loading-wall{display:flex;align-items:center;justify-content:center;
+                min-height:100vh;color:var(--muted);font-size:var(--fs-md)}
+  #shell{display:none;max-width:1280px;margin:0 auto;padding:var(--sp-24)}
+  .shell-hd{display:flex;align-items:center;gap:var(--sp-16);margin-bottom:var(--sp-24);flex-wrap:wrap}
+  .back-link{font-size:var(--fs-sm);color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:4px}
+  .back-link:hover{color:var(--text)}
+  .shell-title{font-size:var(--fs-18);font-weight:700;flex:1}
+  .user-chip{font-size:var(--fs-sm);color:var(--muted)}
+  .period-bar{display:flex;gap:var(--sp-12);align-items:center;flex-wrap:wrap;
+              margin-bottom:var(--sp-24);padding:var(--sp-12) var(--sp-16);
+              background:var(--panel-muted);border:1px solid var(--border);border-radius:8px}
+  .period-bar label{font-size:var(--fs-sm);font-weight:600;color:var(--muted)}
+  .period-bar select{padding:var(--sp-6) var(--sp-8);border:1px solid var(--border);
+                     border-radius:6px;background:var(--input-bg);color:var(--text);
+                     font:inherit;font-size:var(--fs-md)}
+  .muted{color:var(--muted)}
+  .empty{color:var(--muted);padding:var(--sp-16);text-align:center}
+  /* ── Pay Matrix layout ── */
+  .pm-wrap{padding:var(--sp-4) 0 24px}
+  .pm-hd{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:8px}
+  .pm-stats{display:flex;gap:8px;flex-wrap:wrap}
+  .pm-stat{background:#fff;border:1px solid var(--border);border-radius:8px;
+           padding:var(--sp-6) var(--sp-12);display:flex;flex-direction:column;gap:2px;min-width:110px}
+  .pm-stat-num{font-size:var(--fs-lg);font-weight:700;font-variant-numeric:tabular-nums}
+  .pm-stat-lbl{font-size:var(--fs-xs);color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+  .pm-section{margin-bottom:24px}
+  .pm-section-hd{font-size:var(--fs-md);font-weight:600;padding:var(--sp-6) var(--sp-10);
+                 border-radius:6px 6px 0 0;border-bottom:2px solid;margin-bottom:6px}
+  .pm-cell-zero{opacity:.28}
+  .pm-table{background:#fff;border:1px solid var(--border);border-radius:8px;overflow-x:auto}
+  .pm-table-hd,.pm-row{
+    display:grid;
+    grid-template-columns:minmax(180px,1.4fr) repeat(8,minmax(70px,1fr)) minmax(70px,1fr) minmax(70px,1fr) minmax(90px,1.1fr);
+    gap:6px;padding:var(--sp-8) var(--sp-12);align-items:center;min-width:1100px}
+  .pm-table-hd{background:var(--panel-muted);border-bottom:1px solid var(--border);
+               font-size:var(--fs-10-5);font-weight:600;letter-spacing:.04em;
+               text-transform:uppercase;color:var(--muted)}
+  .pm-row{border-bottom:1px solid var(--border);font-size:var(--fs-12-5)}
+  .pm-row:last-child{border-bottom:0}
+  .pm-row:hover{background:#fafafa}
+  .pm-c-num{text-align:right;font-variant-numeric:tabular-nums}
+  .pm-c-pay{font-size:var(--fs-sm);color:var(--muted)}
+  .pm-c-total{font-weight:700;font-size:var(--fs-md)}
+  .pm-name{font-weight:600;line-height:1.25}
+  .pm-email{font-size:var(--fs-xs);line-height:1.2}
+  html[data-theme="dark"] .pm-stat{background:var(--panel)}
+  html[data-theme="dark"] .pm-table{background:var(--panel)}
+  html[data-theme="dark"] .pm-row:hover{background:var(--hover)}
+  html[data-theme="dark"] select{background:var(--input-bg);color:var(--text);border-color:var(--border)}
+</style>
+</head>
+<body>
+<div id="loading-wall">Loading…</div>
+
+<div id="shell">
+  <div class="shell-hd">
+    <a class="back-link" href="/">← Tools</a>
+    <div class="shell-title">MG-HR · Pay Matrix</div>
+    <div class="user-chip" id="user-chip"></div>
+  </div>
+
+  <div class="period-bar">
+    <label for="period-type">Period</label>
+    <select id="period-type">
+      <option value="payperiod">Pay period</option>
+      <option value="week">Week</option>
+      <option value="month">Month</option>
+    </select>
+    <select id="period-value" style="min-width:200px">
+      <option>Loading…</option>
+    </select>
+    <button id="period-reload-btn"
+      style="padding:var(--sp-6) var(--sp-12);border:1px solid var(--border);
+             border-radius:6px;background:transparent;color:var(--text);
+             font:inherit;font-size:var(--fs-md);cursor:pointer">Reload</button>
+  </div>
+
+  <div id="dept-body"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+function esc(s) {
+  return (s || '').toString().replace(/[&<>"']/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtPHP(n) {
+  const f = (+n || 0).toFixed(2).split('.');
+  f[0] = f[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return '₱' + f[0] + '.' + f[1];
+}
+
+let _cachedToken = null;
+let _tokenExpiry = 0;
+let _currentUser = null;
+
+async function getToken() {
+  if (_currentUser && Date.now() < _tokenExpiry - 60000) return _cachedToken;
+  if (!_currentUser) return null;
+  _cachedToken = await _currentUser.getIdToken(true);
+  _tokenExpiry = Date.now() + 55 * 60 * 1000;
+  return _cachedToken;
+}
+
+async function apiFetch(path) {
+  const tok  = await getToken();
+  const hdrs = tok ? { 'Authorization': 'Bearer ' + tok } : {};
+  const resp = await fetch(path, { headers: hdrs });
+  return resp.json();
+}
+
+const STATE = { period: { type: 'payperiod', value: '' }, periods: {} };
+
+function currentPeriodParam() {
+  return 'type=' + encodeURIComponent(STATE.period.type) +
+         '&value=' + encodeURIComponent(STATE.period.value || '');
+}
+function currentPeriodLabel() {
+  const list = STATE.periods[STATE.period.type] || [];
+  const hit  = list.find(p => p.value === STATE.period.value);
+  return hit ? hit.label : (STATE.period.value || '');
+}
+
+// ── Pay Matrix renderers ─────────────────────────────────────────────────────
+const _SECTION_COLORS = ['#f97316','#8b5cf6','#0ea5e9','#16a34a','#f43f5e','#ca8a04','#14b8a6','#6366f1'];
+
+function renderPayRow(it, sectionColor) {
+  const cb = {};
+  for (const c of (it.cat_breakdown || [])) cb[c.code] = c;
+
+  function _catCell(code) {
+    const c      = cb[code] || {hours: 0, pay: 0, rate: 0};
+    const isZero = c.hours === 0;
+    const zeroCls = isZero ? ' pm-cell-zero' : '';
+    const hr  = c.hours.toFixed(2) + 'h';
+    const pay = c.rate > 0 ? fmtPHP(c.pay) : '<span class="muted">₱0</span>';
+    return '<div class="pm-c-num' + zeroCls + '"><div>' + hr + '</div>' +
+           '<div class="pm-c-pay">' + pay + '</div></div>';
+  }
+
+  const billZero  = (it.hours.billable  || 0) === 0;
+  const trainZero = (it.hours.training  || 0) === 0;
+  const accent    = sectionColor || 'var(--text)';
+
+  return '<div class="pm-row" data-email="' + esc(it.email) + '">' +
+    '<div class="pm-c-name">' +
+      '<div class="pm-name"><span style="color:' + accent + '">' + esc(it.name || it.email) + '</span></div>' +
+      '<div class="pm-email muted">' + esc(it.email) + '</div>' +
+    '</div>' +
+    _catCell('0') + _catCell('1a') + _catCell('1b') + _catCell('1c') +
+    _catCell('2') + _catCell('3') + _catCell('4') + _catCell('5') +
+    '<div class="pm-c-num' + (billZero  ? ' pm-cell-zero' : '') + '">' +
+      '<div>' + (it.hours.billable || 0).toFixed(2) + 'h</div>' +
+      '<div class="pm-c-pay">' + fmtPHP(it.pay.billable) + '</div>' +
+    '</div>' +
+    '<div class="pm-c-num' + (trainZero ? ' pm-cell-zero' : '') + '">' +
+      '<div>' + (it.hours.training || 0).toFixed(2) + 'h</div>' +
+      '<div class="pm-c-pay muted">₱0</div>' +
+    '</div>' +
+    '<div class="pm-c-num pm-c-total">' + fmtPHP(it.total_pay) + '</div>' +
+  '</div>';
+}
+
+function renderHrPayMatrix(data) {
+  const body = document.getElementById('dept-body');
+  if (!data || !data.items) {
+    body.innerHTML = '<div class="empty">No data returned.</div>';
+    return;
+  }
+
+  const items      = data.items;
+  const periodLbl  = currentPeriodLabel();
+  const policy     = data.policy || {};
+
+  // Aggregate totals
+  const totalAllowance = items.reduce((s, x) => s + (x.total_pay || 0), 0);
+  const totalCount     = items.length;
+
+  // Group by manager (preserve server sort order)
+  const groups  = [];
+  const groupIdx = {};
+  for (const it of items) {
+    const mgr = it.manager || '(unassigned)';
+    if (groupIdx[mgr] === undefined) {
+      groupIdx[mgr] = groups.length;
+      groups.push({ manager: mgr, items: [] });
+    }
+    groups[groupIdx[mgr]].items.push(it);
+  }
+
+  // Table header
+  const TABLE_HDR =
+    '<div class="pm-table-hd">' +
+      '<div>Intern</div>' +
+      '<div>Cat 0</div><div>Cat 1a</div><div>Cat 1b</div><div>Cat 1c</div>' +
+      '<div>Cat 2</div><div>Cat 3</div><div>Cat 4</div><div>Cat 5</div>' +
+      '<div>Billable</div><div>Training</div>' +
+      '<div>Total Pay</div>' +
+    '</div>';
+
+  let html =
+    '<div class="pm-wrap">' +
+    '<div class="pm-hd">' +
+      '<div>' +
+        '<div style="font-size:var(--fs-18);font-weight:700">' +
+          'Pay Matrix <span class="muted" style="font-weight:400;font-size:var(--fs-14)">· ' + esc(periodLbl) + '</span>' +
+        '</div>' +
+        '<div style="font-size:var(--fs-sm);color:var(--muted);margin-top:4px">' +
+          'Policy ' + esc(policy.policy_no || '002502') + ' v' + esc(policy.version || '1.1') +
+          ' · productive ₱' + (policy.productive_rate || 15) + '/hr · billable ₱' + (policy.billable_rate || 30) + '/hr (numbered non-TSF)' +
+        '</div>' +
+      '</div>' +
+      '<div class="pm-stats">' +
+        '<div class="pm-stat">' +
+          '<div class="pm-stat-num">' + fmtPHP(totalAllowance) + '</div>' +
+          '<div class="pm-stat-lbl">Total Allowance</div>' +
+        '</div>' +
+        '<div class="pm-stat">' +
+          '<div class="pm-stat-num">' + totalCount + '</div>' +
+          '<div class="pm-stat-lbl">Interns</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  // One section per manager
+  groups.forEach(function(g, gi) {
+    const color = _SECTION_COLORS[gi % _SECTION_COLORS.length];
+    const groupTotal = g.items.reduce((s, x) => s + (x.total_pay || 0), 0);
+    html +=
+      '<div class="pm-section">' +
+        '<div class="pm-section-hd" style="color:' + color + ';border-color:' + color + ';background:' + color + '18">' +
+          esc(g.manager) +
+          ' <span style="font-weight:400;font-size:var(--fs-sm);opacity:.7">' + fmtPHP(groupTotal) + '</span>' +
+        '</div>' +
+        '<div class="pm-table">' +
+          TABLE_HDR +
+          g.items.map(it => renderPayRow(it, color)).join('') +
+        '</div>' +
+      '</div>';
+  });
+
+  if (groups.length === 0) {
+    html += '<div class="empty">No interns found for this period.</div>';
+  }
+
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+async function loadPayMatrix() {
+  const body = document.getElementById('dept-body');
+  body.innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const data = await apiFetch('/api/hr/interns/pay?' + currentPeriodParam());
+    if (data && data.error) {
+      body.innerHTML = '<div class="empty" style="color:var(--warn)">' + esc(data.error) + '</div>';
+      return;
+    }
+    renderHrPayMatrix(data);
+  } catch (e) {
+    body.innerHTML = '<div class="empty" style="color:var(--warn)">Network error: ' + esc(String(e)) + '</div>';
+  }
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────────────
+(async function () {
+  var fbCfg;
+  try {
+    fbCfg = await fetch('/api/firebase-config').then(function(r) { return r.json(); });
+  } catch (e) {
+    document.getElementById('loading-wall').textContent = 'Could not reach server.';
+    return;
+  }
+  firebase.initializeApp(fbCfg);
+  var auth = firebase.auth();
+
+  auth.onAuthStateChanged(async function(user) {
+    if (!user) {
+      window.location.href = '/';
+      return;
+    }
+    _currentUser = user;
+    document.getElementById('user-chip').textContent = user.email;
+
+    var periodsData;
+    try {
+      periodsData = await apiFetch('/api/periods');
+    } catch (e) {
+      document.getElementById('loading-wall').textContent = 'Error loading periods.';
+      return;
+    }
+    STATE.periods = periodsData;
+
+    var typeSelect  = document.getElementById('period-type');
+    var valueSelect = document.getElementById('period-value');
+
+    function populatePeriodValues(type) {
+      var list = (STATE.periods[type] || []).slice().reverse();
+      valueSelect.innerHTML = list.map(function(p) {
+        return '<option value="' + esc(p.value) + '">' + esc(p.label) + '</option>';
+      }).join('');
+      if (list.length) {
+        STATE.period.type  = type;
+        STATE.period.value = list[0].value;
+        valueSelect.value  = list[0].value;
+      }
+    }
+
+    populatePeriodValues(typeSelect.value);
+
+    typeSelect.addEventListener('change', function() {
+      populatePeriodValues(typeSelect.value);
+      loadPayMatrix();
+    });
+    valueSelect.addEventListener('change', function() {
+      STATE.period.type  = typeSelect.value;
+      STATE.period.value = valueSelect.value;
+      loadPayMatrix();
+    });
+    document.getElementById('period-reload-btn').addEventListener('click', function() {
+      STATE.period.type  = typeSelect.value;
+      STATE.period.value = valueSelect.value;
+      loadPayMatrix();
+    });
+
+    document.getElementById('loading-wall').style.display = 'none';
+    document.getElementById('shell').style.display        = 'block';
+
+    loadPayMatrix();
+  });
+})();
+</script>
+</body>
+</html>
