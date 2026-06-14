@@ -557,7 +557,13 @@ function renderIncentiveResult(data) {
   if (!items.length) {
     document.getElementById('ic-result').innerHTML =
       '<div class="coming-soon-banner">No hours logged on <strong>' + esc(data.project) +
-      '</strong> in this period.</div>';
+      '</strong> in this period.</div>' +
+      '<div class="muted" style="font-size:var(--fs-sm);margin-top:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">' +
+        '<span>' + esc(data.policy_note || '') + '</span>' +
+        (data.data_as_of
+          ? '<span>Data as of ' + esc(data.data_as_of) + '</span>'
+          : '<span style="color:#b91c1c">⚠ No entries found in this period</span>') +
+      '</div>';
     return;
   }
   var ordered  = items.slice().sort(function(a, b) { return (b.is_fte?1:0) - (a.is_fte?1:0); });
