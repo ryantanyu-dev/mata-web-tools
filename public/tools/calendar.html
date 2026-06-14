@@ -56,6 +56,11 @@
   html[data-theme="dark"] .hrc-cell{background:var(--panel);border-color:var(--border)}
   html[data-theme="dark"] .hrc-cell.is-other{background:var(--panel-muted)}
   html[data-theme="dark"] .hrc-entry.hrc-more{background:var(--panel-muted);color:var(--muted)}
+  /* ── Floating / floating_review ─────────────────────────────────────────────── */
+  .hrc-entry.hrc-floating-review{background:#fef9c3;color:#92400e;border-left:2px solid #f59e0b;font-weight:600}
+  .hrc-entry.hrc-float-badge    {border-left:2px solid #f59e0b !important}
+  .verify-201{font-size:var(--fs-sm);color:#b45309;text-decoration:none;border:1px solid #fcd34d;border-radius:4px;padding:3px 8px;white-space:nowrap}
+  .verify-201:hover{background:#fef3c7}
   /* ── Tooltip ── */
   .hrc-pop{display:none;position:fixed;z-index:9999;min-width:220px;max-width:320px;
            background:#1f2937;color:#f3f4f6;border-radius:8px;padding:var(--sp-10) var(--sp-12);
@@ -73,6 +78,7 @@
   <div class="shell-hd">
     <a class="back-link" href="/">← Tools</a>
     <div class="shell-title">MG-HR · Calendar</div>
+    <a class="verify-201" href="https://docs.google.com/spreadsheets/d/1ZLDa3fTTKK6OstWry94f1ezigyAH5LG5GfMHOBaRxgI/edit" target="_blank" rel="noopener">Verify in 201 ↗</a>
     <div class="user-chip" id="user-chip"></div>
   </div>
   <div id="dept-body"></div>
@@ -166,7 +172,8 @@ async function loadCalendar() {
     const last  = new Date(year, month+1, 0);
     const gridStart = new Date(first); gridStart.setDate(first.getDate()-first.getDay());
     const gridEnd   = new Date(last);  gridEnd.setDate(last.getDate()+(6-last.getDay()+7)%7);
-    let bdayC=0, anniC=0, leaveC=0;
+    const numWeeks  = Math.round((gridEnd - gridStart) / 864e5 / 7) + 1;
+    let bdayC=0, anniC=0, leaveC=0, fltReviewC=0;
     let cells = dayNames.map(d=>'<div class="hrc-hd">'+d+'</div>').join('');
     for (let d=new Date(gridStart); d<=gridEnd; d.setDate(d.getDate()+1)) {
       const iso     = isoLocal(d);
@@ -178,14 +185,28 @@ async function loadCalendar() {
       if(!inMonth) cls+=' is-other';
       if(isToday)  cls+=' is-today';
       if(weekend)  cls+=' is-weekend';
-      if(inMonth){ bdayC+=entries.filter(e=>e.kind==='birthday').length; anniC+=entries.filter(e=>e.kind==='milestone').length; leaveC+=entries.filter(e=>e.kind==='leave').length; }
+      if(inMonth){
+        bdayC+=entries.filter(e=>e.kind==='birthday').length;
+        anniC+=entries.filter(e=>e.kind==='milestone').length;
+        leaveC+=entries.filter(e=>e.kind==='leave').length;
+        fltReviewC+=entries.filter(e=>e.kind==='floating_review').length;
+      }
       const entryHtml = entries.slice(0,4).map(e=>{
         const isReg = e.kind==='regularization';
-        const typeClass = isReg?'hrc-regularization':(e.kind==='birthday'?'hrc-birthday':e.kind==='milestone'?'hrc-milestone':'hrc-leave');
-        const icon = isReg?'🎓':(e.kind==='birthday'?'🎂':e.kind==='milestone'?'🏅':'🏝');
+        const isFltReview = e.kind==='floating_review';
+        let typeClass, icon;
+        if(isFltReview)          { typeClass='hrc-floating-review'; icon='⏳'; }
+        else if(isReg)           { typeClass='hrc-regularization';  icon='🎓'; }
+        else if(e.kind==='birthday')  { typeClass='hrc-birthday';  icon='🎂'; }
+        else if(e.kind==='milestone') { typeClass='hrc-milestone';  icon='🏅'; }
+        else                     { typeClass='hrc-leave';           icon='🏝'; }
         const f = e.full||{};
+        if(f.flag==='floating' && !isFltReview) typeClass+=' hrc-float-badge';
         const tail=[];
-        if(e.kind==='leave'){
+        if(isFltReview){
+          tail.push('<div class="ddp-t-name" style="color:#f59e0b">⏳ Floating review</div>');
+          if(f.message) tail.push('<div class="ddp-t-desc">'+esc(f.message)+'</div>');
+        } else if(e.kind==='leave'){
           if(f.kind)        tail.push('<div class="ddp-t-name">'+esc(f.kind)+'</div>');
           if(f.description) tail.push('<div class="ddp-t-desc">'+esc(f.description.slice(0,200))+'</div>');
           if(f.emp_type)    tail.push('<div class="ddp-sub" style="font-style:italic;margin-top:2px">'+esc(f.emp_type)+' Employee</div>');
@@ -193,12 +214,15 @@ async function loadCalendar() {
         } else if(e.kind==='birthday'){
           if(f.age)      tail.push('<div class="ddp-t-name">Turns '+esc(String(f.age))+'</div>');
           if(f.emp_type) tail.push('<div class="ddp-sub" style="font-style:italic;margin-top:2px">'+esc(f.emp_type)+' Employee</div>');
+          if(f.status==='Floating') tail.push('<div class="ddp-sub" style="color:#f59e0b;margin-top:2px">🟡 Floating</div>');
           tail.push('<div class="ddp-sub" style="margin-top:4px">'+esc(f.date||iso)+'</div>');
         } else if(e.kind==='milestone'){
           if(f.years) tail.push('<div class="ddp-t-name">'+esc(String(f.years))+'-year work anniversary (FTE)</div>');
+          if(f.status==='Floating') tail.push('<div class="ddp-sub" style="color:#f59e0b;margin-top:2px">🟡 Floating</div>');
           tail.push('<div class="ddp-sub" style="margin-top:4px">Hired '+esc(f.hire_date||'')+'</div>');
         } else if(isReg){
           tail.push('<div class="ddp-t-name" style="color:#f43f5e">Regularization</div>');
+          if(f.status==='Floating') tail.push('<div class="ddp-sub" style="color:#f59e0b;margin-top:2px">🟡 Floating</div>');
           tail.push('<div class="ddp-sub" style="margin-top:4px">FTE start: '+esc(f.sdate_fte||'')+'</div>');
         }
         const popHtml = '<div class="ddp-hd">'+icon+' '+esc(f.user_name||f.user_email||e.label)+'</div>'+(f.user_email?'<div class="ddp-sub">'+esc(f.user_email)+'</div>':'')+tail.join('');
@@ -207,27 +231,30 @@ async function loadCalendar() {
       const overflow = entries.length>4?'<div class="hrc-entry hrc-more">+'+(entries.length-4)+'</div>':'';
       cells += '<div class="'+cls+'" data-date="'+iso+'"><div class="hrc-dnum">'+d.getDate()+'</div>'+entryHtml+overflow+'</div>';
     }
-    return {cells, bdayC, anniC, leaveC};
+    const gridStyle = 'grid-template-rows:auto repeat('+numWeeks+',96px)';
+    return {cells, bdayC, anniC, leaveC, fltReviewC, gridStyle};
   }
 
   const months = [0,1,2].map(i=>{
     const m = new Date(anchorYear, anchorMonth+i, 1);
     const label = m.toLocaleString('en-US',{month:'long',year:'numeric'});
-    const {cells,bdayC,anniC,leaveC} = buildMonthGrid(m.getFullYear(), m.getMonth());
-    return {label,cells,bdayC,anniC,leaveC};
+    const {cells,bdayC,anniC,leaveC,fltReviewC,gridStyle} = buildMonthGrid(m.getFullYear(), m.getMonth());
+    return {label,cells,bdayC,anniC,leaveC,fltReviewC,gridStyle};
   });
   const totalLeaves=months.reduce((s,m)=>s+m.leaveC,0);
   const totalBdays =months.reduce((s,m)=>s+m.bdayC,0);
   const totalAnnis =months.reduce((s,m)=>s+m.anniC,0);
   const totalRegs  =datedEvents.filter(ev=>ev.kind==='regularization').length;
+  const totalFltReview=months.reduce((s,m)=>s+m.fltReviewC,0);
+  const totalFloating =datedEvents.filter(ev=>ev.flag==='floating'&&ev.kind!=='floating_review').length;
   const noBirthdays=(totalBdays+totalAnnis)===0;
   const emptyBanner = noBirthdays
     ? '<div class="coming-soon-banner" style="margin-top:12px"><strong>Birthdays &amp; Work anniversaries</strong> are empty for this period. If you expected entries, make sure the Payroll 2026 sheet has been imported via <strong>Control Panel → 201 Roster</strong> with Birthday and Hire Date columns mapped.</div>'
     : '';
   const gridsHtml = months.map(m=>
     '<div class="hrc-month-block">' +
-      '<div class="hrc-month-lbl"><strong>'+esc(m.label)+'</strong> <span class="muted" style="font-size:var(--fs-sm)">· '+m.leaveC+' leave'+(m.bdayC?' · 🎂 '+m.bdayC:'')+(m.anniC?' · 🏅 '+m.anniC:'')+'</span></div>' +
-      '<div class="hrc-grid">'+m.cells+'</div>' +
+      '<div class="hrc-month-lbl"><strong>'+esc(m.label)+'</strong> <span class="muted" style="font-size:var(--fs-sm)">· '+m.leaveC+' leave'+(m.bdayC?' · 🎂 '+m.bdayC:'')+(m.anniC?' · 🏅 '+m.anniC:'')+(m.fltReviewC?' · ⏳ '+m.fltReviewC:'')+'</span></div>' +
+      '<div class="hrc-grid" style="'+m.gridStyle+'">'+m.cells+'</div>' +
     '</div>'
   ).join('');
 
@@ -236,22 +263,25 @@ async function loadCalendar() {
     if(!evs.length) return '<div class="muted" style="padding:var(--sp-10) 0">No events on '+dateIso+'.</div>';
     return evs.map(e=>{
       const isReg=e.kind==='regularization';
-      const icon=isReg?'🎓':(e.kind==='birthday'?'🎂':e.kind==='milestone'?'🏅':'🏝');
+      const isFltRev=e.kind==='floating_review';
       const f=e.full||{};
+      const icon=isFltRev?'⏳':isReg?'🎓':(e.kind==='birthday'?'🎂':e.kind==='milestone'?'🏅':'🏝');
+      const floatBadge=(f.status==='Floating'&&!isFltRev)?' <span style="color:#f59e0b;font-size:10px">🟡</span>':'';
       let detail='';
-      if(e.kind==='leave')       detail=(f.kind||'')+(f.hours?' · '+(f.hours||0).toFixed(1)+'h':'');
+      if(isFltRev)               detail='<span style="color:#92400e;font-weight:600">'+esc(f.message||'Floating review')+'</span>';
+      else if(e.kind==='leave')  detail=(f.kind||'')+(f.hours?' · '+(f.hours||0).toFixed(1)+'h':'');
       else if(e.kind==='birthday') detail=f.age?'Turns '+f.age:'';
       else if(e.kind==='milestone') detail=(f.years?f.years+'-yr FTE anniversary':'Work anniversary');
       else if(isReg) detail='<span style="color:#f43f5e;font-weight:600">Regularization</span>'+(f.sdate_fte?' (FTE: '+f.sdate_fte+')':'');
-      return '<div style="padding:var(--sp-7) 0;border-bottom:1px solid var(--border)"><div style="font-weight:500">'+icon+' '+esc(e.label)+'</div>'+(detail?'<div class="muted" style="font-size:var(--fs-base);margin-top:2px">'+detail+'</div>':'')+'</div>';
+      return '<div style="padding:var(--sp-7) 0;border-bottom:1px solid var(--border)"><div style="font-weight:500">'+icon+' '+esc(e.label)+floatBadge+'</div>'+(detail?'<div class="muted" style="font-size:var(--fs-base);margin-top:2px">'+detail+'</div>':'')+'</div>';
     }).join('');
   }
 
   const initialDate = todayIso;
   body.innerHTML =
     '<div class="hrc-header">' +
-      '<div><strong>3-Month Calendar</strong> <span class="muted" style="font-size:var(--fs-base)">· '+totalLeaves+' leave · '+totalBdays+' birthday (all) · '+totalAnnis+' anniversary (FTE)'+(totalRegs?' · 🎓 '+totalRegs+' regularization':'')+'</span></div>' +
-      '<div class="muted" style="font-size:var(--fs-sm)">🏝 Leave · 🎂 Birthday · 🏅 Work anniversary (FTE) · 🎓 Regularization</div>' +
+      '<div><strong>3-Month Calendar</strong> <span class="muted" style="font-size:var(--fs-base)">· '+totalLeaves+' leave · '+totalBdays+' birthday · '+totalAnnis+' anniversary (FTE)'+(totalRegs?' · 🎓 '+totalRegs+' regularization':'')+(totalFltReview?' · ⏳ '+totalFltReview+' floating review':'')+(totalFloating?' · 🟡 '+totalFloating+' floating':'')+'</span></div>' +
+      '<div class="muted" style="font-size:var(--fs-sm)">🏝 Leave · 🎂 Birthday · 🏅 Work anniversary (FTE) · 🎓 Regularization'+(totalFltReview?' · ⏳ Floating review':'')+(totalFloating?' · 🟡 Floating':'')+'</div>' +
     '</div>' +
     '<div style="display:flex;gap:20px;align-items:flex-start">' +
       '<div style="flex:3;min-width:0">'+gridsHtml+'</div>' +

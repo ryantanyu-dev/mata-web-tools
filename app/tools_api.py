@@ -824,8 +824,9 @@ class Handler(BaseHTTPRequestHandler):
                 if rows is None:
                     return self._send_json({"error": "missing period"}, 400, origin=origin)
                 rows     = exclude_leaves(rows)
-                proj_lc  = proj_name.lower().strip()
-                by_email = {}
+                proj_lc        = proj_name.lower().strip()
+                by_email       = {}
+                max_entry_date: str | None = None
                 for r in rows:
                     if (r.get("project_name") or "").lower().strip() != proj_lc:
                         continue
@@ -835,6 +836,10 @@ class Handler(BaseHTTPRequestHandler):
                     secs = int(r.get("duration_seconds") or 0)
                     if secs <= 0:
                         continue
+                    entry_date = (r.get("date") or "").strip()
+                    if entry_date:
+                        if max_entry_date is None or entry_date > max_entry_date:
+                            max_entry_date = entry_date
                     bucket = by_email.setdefault(em, {
                         "user_email": em,
                         "user_name":  r.get("user_name") or em,
@@ -889,6 +894,7 @@ class Handler(BaseHTTPRequestHandler):
                         "base":      round(grand_base, 2),
                         "incentive": round(grand_inc, 2),
                     },
+                    "data_as_of": max_entry_date,
                     "policy_note": (
                         "incentive = hourly_rate × hours × (multiplier − 1.0) "
                         "— i.e. 1.0x = no bonus, 1.5x = +50%, 2.0x = double pay "
@@ -1225,6 +1231,12 @@ class Handler(BaseHTTPRequestHandler):
                     if rows is None:
                         return self._send_json({"error": "missing period"}, 400, origin=origin)
                 _cfg_leaves = load_config()
+                # D05: build status map; exclude Resigned/AWOL/non-{Active,Floating}
+                _status_map_leaves = {
+                    (em or "").lower(): (extras.get("status") or "").strip().lower()
+                    for em, extras in (_cfg_leaves.get("people_extras") or {}).items()
+                }
+                _ACTIVE_ST_L = {"", "active", "floating"}
                 _emp_type_map = {}
                 for _d in (_cfg_leaves.get("departments") or []):
                     _dn = (_d.get("name") or "")
@@ -1234,6 +1246,10 @@ class Handler(BaseHTTPRequestHandler):
                 items = []
                 leave_pat = re.compile(r"\b(leave|sick|vacation|VL|SL|maternity|paternity|bereavement|emergency leave)\b", re.I)
                 for r in rows:
+                    _em_st_chk = (r.get("user_email") or "").lower().strip()
+                    _lst = _status_map_leaves.get(_em_st_chk, "")
+                    if _lst and _lst not in _ACTIVE_ST_L:
+                        continue  # D05: exclude Resigned/AWOL/non-{Active,Floating}
                     blob = " ".join(str(r.get(k) or "") for k in ("project_name", "task_name", "description", "tags"))
                     if not leave_pat.search(blob):
                         continue
@@ -1271,6 +1287,12 @@ class Handler(BaseHTTPRequestHandler):
                 if month < 1 or month > 12:
                     return self._send_json({"error": "month must be 1-12"}, 400, origin=origin)
                 cfg   = load_config()
+                # D05: status map — exclude Resigned/AWOL/non-{Active,Floating}
+                _status_map_dates = {
+                    (em or "").lower(): (extras.get("status") or "").strip().lower()
+                    for em, extras in (cfg.get("people_extras") or {}).items()
+                }
+                _ACTIVE_ST_D = {"", "active", "floating"}
                 dates = cfg.get("person_dates") or {}
                 email_to_dept = {}
                 email_to_name = {}
@@ -1285,6 +1307,10 @@ class Handler(BaseHTTPRequestHandler):
                 items = []
                 for email, rec in dates.items():
                     email_lc = (email or "").lower()
+                    _pst_d = _status_map_dates.get(email_lc, "")
+                    if _pst_d and _pst_d not in _ACTIVE_ST_D:
+                        continue  # D05: exclude Resigned/AWOL
+                    _is_float_d = (_pst_d == "floating")
                     for kind, iso in (("birthday", rec.get("birthday")), ("milestone", rec.get("hire_date"))):
                         if not iso:
                             continue
@@ -1304,7 +1330,10 @@ class Handler(BaseHTTPRequestHandler):
                             "user_name":  email_to_name.get(email_lc, email_lc),
                             "dept":       email_to_dept.get(email_lc, ""),
                             "kind":       kind,
+                            "status":     "Floating" if _is_float_d else "Active",
                         }
+                        if _is_float_d:
+                            item["flag"] = "floating"
                         if kind == "birthday":
                             item["age"] = year - d0.year if d0.year else None
                         else:
@@ -1316,6 +1345,10 @@ class Handler(BaseHTTPRequestHandler):
                 _reg_days      = cfg.get("regularization_days") or 180
                 for email, extras in _people_extras.items():
                     email_lc = (email or "").lower()
+                    _pst_e = _status_map_dates.get(email_lc, "")
+                    if _pst_e and _pst_e not in _ACTIVE_ST_D:
+                        continue  # D05: exclude Resigned/AWOL/non-{Active,Floating}
+                    _is_float_e = (_pst_e == "floating")
                     _sfte  = (extras.get("sdate_fte")   or "").strip()
                     _sptf  = (extras.get("sdate_ptf")   or "").strip()
                     _sintn = (extras.get("sdate_intern") or "").strip()
@@ -1331,7 +1364,7 @@ class Handler(BaseHTTPRequestHandler):
                                 event_date = dt.date(year, d0.month, d0.day)
                             except ValueError:
                                 event_date = dt.date(year, d0.month, 28)
-                            items.append({
+                            _ms_item = {
                                 "date":       event_date.isoformat(),
                                 "user_email": email_lc,
                                 "user_name":  email_to_name.get(email_lc, email_lc),
@@ -1340,7 +1373,11 @@ class Handler(BaseHTTPRequestHandler):
                                 "emp_level":  emp_level,
                                 "years":      year - d0.year if d0.year else None,
                                 "hire_date":  iso,
-                            })
+                                "status":     "Floating" if _is_float_e else "Active",
+                            }
+                            if _is_float_e:
+                                _ms_item["flag"] = "floating"
+                            items.append(_ms_item)
                     if _sfte:
                         try:
                             fte_d = dt.date.fromisoformat(_sfte)
@@ -1348,7 +1385,7 @@ class Handler(BaseHTTPRequestHandler):
                         except (ValueError, OverflowError):
                             reg_d = None
                         if reg_d and reg_d.year == year and reg_d.month == month:
-                            items.append({
+                            _reg_item = {
                                 "date":       reg_d.isoformat(),
                                 "user_email": email_lc,
                                 "user_name":  email_to_name.get(email_lc, email_lc),
@@ -1356,7 +1393,34 @@ class Handler(BaseHTTPRequestHandler):
                                 "kind":       "regularization",
                                 "sdate_fte":  _sfte,
                                 "emp_level":  "fte",
-                            })
+                                "status":     "Floating" if _is_float_e else "Active",
+                            }
+                            if _is_float_e:
+                                _reg_item["flag"] = "floating"
+                            items.append(_reg_item)
+                    # D05: floating_review — one per Floating person per queried month
+                    if _is_float_e:
+                        _flt_day = 1
+                        _sdate_for_day = _sfte or _sptf or _sintn
+                        if _sdate_for_day:
+                            try:
+                                _flt_day = dt.date.fromisoformat(_sdate_for_day).day
+                            except ValueError:
+                                _flt_day = 1
+                        try:
+                            _flt_date = dt.date(year, month, _flt_day)
+                        except ValueError:
+                            _flt_date = dt.date(year, month, 1)
+                        items.append({
+                            "date":       _flt_date.isoformat(),
+                            "user_email": email_lc,
+                            "user_name":  email_to_name.get(email_lc, email_lc),
+                            "dept":       email_to_dept.get(email_lc, ""),
+                            "kind":       "floating_review",
+                            "status":     "Floating",
+                            "flag":       "floating",
+                            "message":    "Floating status · 6-month cap. Please review: regularize or update 201 Status.",
+                        })
                 _et_map_dates = {}
                 for _d2 in (cfg.get("departments") or []):
                     _dn2 = (_d2.get("name") or "")
@@ -1374,7 +1438,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": str(exc)}, 500, origin=origin)
 
 
-# ── Server startup ───────────────────────────────────────────────────────────────────────────
+
+# ── Server startup ───────────────────────────────────────────────────────────────────────────────────────
 def main():
     server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     server.daemon_threads = True
