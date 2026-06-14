@@ -10,7 +10,7 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 | 01 | Fix period default | qa-passed | b80923a | mata-tools-api-00011-pds | QA 2026-06-14: all 6 gates green |
 | 02 | Mobile responsive layout | qa-passed | 2eae35e | mata-tools-api-00011-pds | QA 2026-06-14: all 8 gates green |
 | 03 | Mobile card view | qa-passed | c7e8432 | mata-tools-api-00013-q2k | QA 2026-06-14: all 8 gates green |
-| 04 | Data freshness indicator | pending | — | — | depends on 01 QA-passed |
+| 04 | Data freshness indicator | qa-passed | 43224d4 | mata-tools-api-00015-42k | QA 2026-06-14: all 7 gates green (incl. empty-state footer fix at 43224d4) |
 | 05 | Port Workload Matrix | pending | — | — | standalone tool port — independent of 01–04; runnable in its own session |
 | 06 | Incentive UI polish | pending | — | — | 3 fixes (bigger × button, align step1/step2, caption text); depends on 02 QA-passed |
 | 07 | Restore login (empty Firebase apiKey) | qa-passed | b80923a | mata-tools-api-00011-pds | Fixed in same deploy as 01; confirmed signed in + data loading 2026-06-14 |
@@ -19,7 +19,7 @@ Status values: `pending` → `in-progress` → `built` → `qa-passed` / `qa-fai
 
 ## Current active task
 
-**Next: Task 04** (data freshness indicator, depends on 01 ✅) or **Task 06** (incentive UI polish, depends on 02 ✅). Pick lowest: **04**.
+**Next: Task 06** (incentive UI polish, depends on 02 ✅) — 3 fixes: bigger × button, align step1/step2, caption text. Task 05 (Workload Matrix) also unblocked and standalone.
 
 ## Diagnosis summary (Opus, 2026-06-13)
 
