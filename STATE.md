@@ -9,7 +9,7 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 |---|------|--------|--------|-------------|-------|
 | 01 | Fix period default | qa-passed | b80923a | mata-tools-api-00011-pds | QA 2026-06-14: all 6 gates green |
 | 02 | Mobile responsive layout | qa-passed | 2eae35e | mata-tools-api-00011-pds | QA 2026-06-14: all 8 gates green |
-| 03 | Mobile card view | pending | — | — | depends on 02 QA-passed |
+| 03 | Mobile card view | qa-passed | c7e8432 | mata-tools-api-00013-q2k | QA 2026-06-14: all 8 gates green |
 | 04 | Data freshness indicator | pending | — | — | depends on 01 QA-passed |
 | 05 | Port Workload Matrix | pending | — | — | standalone tool port — independent of 01–04; runnable in its own session |
 | 06 | Incentive UI polish | pending | — | — | 3 fixes (bigger × button, align step1/step2, caption text); depends on 02 QA-passed |
@@ -19,9 +19,7 @@ Status values: `pending` → `in-progress` → `built` → `qa-passed` / `qa-fai
 
 ## Current active task
 
-**Next: 04 — Data freshness indicator** (depends on 01, now QA-passed) — or **03 — Mobile card view** (depends on 02). Pick lowest runnable.
-
-**Infra fix landed (2026-06-14):** `cloudbuild.yaml` default `_FIREBASE_API_KEY` changed from `''` to the actual key. Push `cloudbuild.yaml` + `STATE.md` together next commit.
+**Next: Task 04** (data freshness indicator, depends on 01 ✅) or **Task 06** (incentive UI polish, depends on 02 ✅). Pick lowest: **04**.
 
 ## Diagnosis summary (Opus, 2026-06-13)
 
