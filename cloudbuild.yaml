@@ -27,11 +27,10 @@ steps:
       - '--set-env-vars=PANSO_ROOT=/data,FIREBASE_PROJECT_ID=panso-ph,FIREBASE_API_KEY=${_FIREBASE_API_KEY},FIREBASE_AUTH_DOMAIN=panso-ph.firebaseapp.com,FIREBASE_STORAGE_BUCKET=panso-ph.firebasestorage.app,FIREBASE_MESSAGING_SENDER_ID=965834933814,FIREBASE_APP_ID=1:965834933814:web:44debe4e06d118164bba97'
       - '--service-account=panso-api@panso-ph.iam.gserviceaccount.com'
 
-# _FIREBASE_API_KEY is supplied at build time so the key is not stored in this repo.
-# Set it on the Cloud Build trigger (Console > Cloud Build > Triggers > Edit > Substitution variables),
-# or pass it manually: gcloud builds submit --substitutions=_FIREBASE_API_KEY=<key>
+# _FIREBASE_API_KEY: Firebase web API key — public-safe, ships in browser JS (see D01).
+# Baked in as the default so Cloud Build triggers never deploy with an empty key.
 substitutions:
-  _FIREBASE_API_KEY: ''
+  _FIREBASE_API_KEY: 'AIzaSyCcOz1ym3v7BtcfzKN_5A7Ymsm6Ujd_7tY'
 
 images:
   - 'asia-southeast1-docker.pkg.dev/panso-ph/cloud-run-source-deploy/mata-tools-api'
