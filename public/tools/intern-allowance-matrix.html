@@ -327,13 +327,17 @@ async function loadPayMatrix() {
 
     function populatePeriodValues(type) {
       var list = (STATE.periods[type] || []).slice().reverse();
+      var todayStr = new Date().toISOString().slice(0, 10);
       valueSelect.innerHTML = list.map(function(p) {
         return '<option value="' + esc(p.value) + '">' + esc(p.label) + '</option>';
       }).join('');
       if (list.length) {
         STATE.period.type  = type;
-        STATE.period.value = list[0].value;
-        valueSelect.value  = list[0].value;
+        // Default to the most recent period that has already started (start <= today).
+        // Falls back to list[0] (most recent) if every period is in the future.
+        var defaultPeriod = list.find(function(p) { return p.start <= todayStr; }) || list[0];
+        STATE.period.value = defaultPeriod.value;
+        valueSelect.value  = defaultPeriod.value;
       }
     }
 

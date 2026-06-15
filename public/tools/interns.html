@@ -271,13 +271,15 @@ function renderInterns(data) {
       const col  = _COLORS[gi % _COLORS.length];
       const list = (byManager[mgr]||[]).filter(it => !_filter || it.status_bucket===_filter || (_filter==='no_target'&&it.target_missing));
       if (!list.length && _filter) return '';
-      const total = (byManager[mgr]||[]).length;
-      const avg   = total ? (byManager[mgr]||[]).reduce((s,x)=>s+(x.pct||0),0)/total : 0;
+      const total    = (byManager[mgr]||[]).length;
+      const targeted = (byManager[mgr]||[]).filter(x => !x.target_missing);
+      const avg      = targeted.length ? targeted.reduce((s,x)=>s+(x.pct||0),0)/targeted.length : null;
+      const avgLabel = avg === null ? 'avg —' : 'avg ' + avg.toFixed(0) + '%';
       return '<div class="hri-mgr-group">' +
         '<div class="hri-mgr-hd" style="border-left:3px solid ' + col + '">' +
           '<div class="hri-mgr-name" style="color:' + col + '">' + esc(mgr) + '</div>' +
           '<div class="hri-mgr-count">' + total + ' intern' + (total===1?'':'s') + '</div>' +
-          '<div class="hri-mgr-avg">avg ' + avg.toFixed(0) + '%</div>' +
+          '<div class="hri-mgr-avg">' + avgLabel + '</div>' +
         '</div>' +
         (list.length
           ? '<div class="hri-cards">' + list.map(it => renderCard(it, col)).join('') + '</div>'

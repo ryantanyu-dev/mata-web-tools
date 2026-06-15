@@ -1,0 +1,11 @@
+# .gcloudignore — controls what gcloud builds submit uploads to Cloud Build
+# Inherits .gitignore rules, then adds local-dev scratch files.
+#!include:.gitignore
+
+# Local QA scratch files (untracked, never ship)
+qa_02_diff.py
+qa_03_diff.py
+qa_scratch/
+
+# Other local dev artifacts
+*.bat

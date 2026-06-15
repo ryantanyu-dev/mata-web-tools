@@ -34,8 +34,21 @@ data in `gs://panso-ph-data` (FUSE-mounted at `/data`).
 | 02 | `02_mobile-responsive-layout.md` | P0 | 01 | Full mobile responsive pass: breakpoints, table scroll, touch events. |
 | 03 | `03_mobile-card-view.md` | P1 | 02 | Replace 6-col table with card layout on narrow viewports. |
 | 04 | `04_data-freshness-indicator.md` | P2 | 01 | Show "data as of [date]" so users know if data is stale. |
+| 05 | `05_port-workload-matrix.md` | P1 | — | Port Panso's Workload tab → new `workload-matrix.html` tool (staff × client-project matrix, MT-Ops). Standalone — independent of 01–04. |
+| 06 | `06_incentive-ui-polish.md` | P2 | 02 | Incentive Calculator polish: bigger project-clear (×) button, align Step 1/Step 2 inputs, update formula caption. |
+| 07 | `07_fix-firebase-apikey-deploy.md` | **P0 BLOCKER** | — | Restore login: deployed `/api/firebase-config` serves empty `apiKey` (rev 00010). Cloud Shell redeploy with `_FIREBASE_API_KEY`. **Gates live-QA of 01–06 — do first.** |
+| 08 | `08_repo-hygiene-gitattributes.md` | P2 | — | Add `.gitattributes` (LF normalize) + commit housekeeping; kills CRLF churn masking diffs. Repo-only, no deploy. |
+| 09 | `09_port-dept-documents.md` | P2 | — | Port Panso's per-dept Documents tab → new read-only `dept-documents.html` tool. Standalone. Read-only (D11 open decision). |
+| 10 | `10_panso-redirect-hr-tabs.md` | P1 | — | **⛔ GATED.** Panso Phase D2: redirect Calendar/Interns/PayMatrix tabs → Mata Web Tools (no backend deletion). Edits Panso repo. Gate: Panso P0 closed + Jun 16+. |
+| 11 | `11_panso-strip-incentive.md` | P1 | 10 | **⛔ GATED.** Panso Phase D1: strip Incentive Calculator from Panso (destructive). Edits Panso repo. Gate: as 10 + task 10 deployed green. |
 
 **Mobile-ready exit gate (after 01–02):** the incentive calculator selects the correct default period and the results table is readable and usable on a 375px iPhone viewport.
+
+> **Runnable now:** 08 (repo hygiene) and 09 (Dept Documents port). **Tasks 10 & 11 are GATED** —
+> they edit the Panso repo (Phase C/D) and must NOT run until the gate at the top of each file is
+> met (Panso P0 CSV incident closed AND today ≥ Jun 16, 2026); 11 also waits on 10 deployed green.
+
+> **Note:** tasks 01–04 + 06 are the incentive-calculator line; task 05 is a separate tool port sharing this executor-visible queue (per D08). 05 carries no dependency on the others; 06 depends on 02.
 
 ## QA discipline
 

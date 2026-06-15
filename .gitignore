@@ -6,3 +6,10 @@ secrets/
 *.json.bak
 node_modules/
 .firebase/
+_pipeline/
+/sonnet/
+/STATE.md
+
+# Local QA scratch (also excluded by .gcloudignore)
+qa_scratch/
+qa_*_diff.py
