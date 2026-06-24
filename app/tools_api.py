@@ -417,6 +417,30 @@ def load_departments():
     return out
 
 
+# ── Dept Documents helpers (verbatim from Panso panso_local.py L2148–2231) ──
+
+def slugify_dept(name):
+    s = re.sub(r"[^a-z0-9]+", "-", (name or "").lower()).strip("-")
+    return s or "unknown"
+
+
+def docs_dir():
+    d = DATA_DIR / "dept-documents"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def load_dept_documents(dept_name):
+    path = docs_dir() / f"{slugify_dept(dept_name)}.json"
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data.get("documents") or []
+    except Exception:
+        return []
+
+
 def _norm(s):
     return (s or "").strip().lower()
 
@@ -1337,6 +1361,26 @@ class Handler(BaseHTTPRequestHandler):
                         e = (r.get("user_email") or "").lower().strip()
                         if e and e not in email_to_name:
                             email_to_name[e] = r.get("user_name") or e
+                # Also scan export_interns.csv for names not in time-tracking data.
+                _interns_csv_dates = ALPHALISTS_DIR / "export_interns.csv"
+                if _interns_csv_dates.exists():
+                    import csv as _csv_di
+                    with _interns_csv_dates.open(encoding="utf-8") as _fh_di:
+                        for _ri_di in _csv_di.reader(_fh_di):
+                            if len(_ri_di) < 3:
+                                continue
+                            _em_di = (_ri_di[0] or "").strip().lower()
+                            _nm_di = (_ri_di[2] or "").strip()
+                            if _em_di and "@" in _em_di and _nm_di and _em_di not in email_to_name:
+                                email_to_name[_em_di] = _nm_di
+                # Last-resort: humanize email local-part (e.g. carlo@mata.ph -> "Carlo").
+                def _humanize_email_dates(em):
+                    local = (em or "").split("@")[0]
+                    parts = re.split(r"[._\-]+", local)
+                    parts = [p.title() for p in parts if p and not p.isdigit()]
+                    return " ".join(parts) if parts else em
+                def _resolve_name_dates(em):
+                    return email_to_name.get(em) or _humanize_email_dates(em)
                 items = []
                 for email, rec in dates.items():
                     email_lc = (email or "").lower()
@@ -1360,7 +1404,7 @@ class Handler(BaseHTTPRequestHandler):
                         item = {
                             "date":       event_date.isoformat(),
                             "user_email": email_lc,
-                            "user_name":  email_to_name.get(email_lc, email_lc),
+                            "user_name":  _resolve_name_dates(email_lc),
                             "dept":       email_to_dept.get(email_lc, ""),
                             "kind":       kind,
                             "status":     "Floating" if _is_float_d else "Active",
@@ -1400,7 +1444,7 @@ class Handler(BaseHTTPRequestHandler):
                             _ms_item = {
                                 "date":       event_date.isoformat(),
                                 "user_email": email_lc,
-                                "user_name":  email_to_name.get(email_lc, email_lc),
+                                "user_name":  _resolve_name_dates(email_lc),
                                 "dept":       email_to_dept.get(email_lc, ""),
                                 "kind":       "milestone",
                                 "emp_level":  emp_level,
@@ -1421,7 +1465,7 @@ class Handler(BaseHTTPRequestHandler):
                             _reg_item = {
                                 "date":       reg_d.isoformat(),
                                 "user_email": email_lc,
-                                "user_name":  email_to_name.get(email_lc, email_lc),
+                                "user_name":  _resolve_name_dates(email_lc),
                                 "dept":       email_to_dept.get(email_lc, ""),
                                 "kind":       "regularization",
                                 "sdate_fte":  _sfte,
@@ -1447,7 +1491,7 @@ class Handler(BaseHTTPRequestHandler):
                         items.append({
                             "date":       _flt_date.isoformat(),
                             "user_email": email_lc,
-                            "user_name":  email_to_name.get(email_lc, email_lc),
+                            "user_name":  _resolve_name_dates(email_lc),
                             "dept":       email_to_dept.get(email_lc, ""),
                             "kind":       "floating_review",
                             "status":     "Floating",
@@ -1462,6 +1506,15 @@ class Handler(BaseHTTPRequestHandler):
                         _et_map_dates[(_em2 or "").lower()] = _et2
                 for _it2 in items:
                     _it2["emp_type"] = _et_map_dates.get((_it2.get("user_email") or "").lower(), "")
+                # Intra-identity de-dupe: collapse same resolved-name + kind + date.
+                _seen_nkd = set()
+                _deduped_items = []
+                for _it3 in items:
+                    _nkd = (_it3["date"], _it3["kind"], (_it3["user_name"] or "").lower())
+                    if _nkd not in _seen_nkd:
+                        _seen_nkd.add(_nkd)
+                        _deduped_items.append(_it3)
+                items = _deduped_items
                 items.sort(key=lambda x: (x["date"], x["user_name"]))
                 return self._send_json({"items": items, "year": year, "month": month}, origin=origin)
 
@@ -1587,6 +1640,23 @@ class Handler(BaseHTTPRequestHandler):
                     "total_seconds": wl_grand,
                     "total_hours":   round(wl_grand / 360) / 10,
                 }, origin=origin)
+
+            # ── Dept list (admin: all dept names for pickers) ───────────────────
+            if u.path == "/api/departments":
+                if tier_info.get("tier") != "admin":
+                    return self._send_json({"error": "Admin only."}, 403, origin=origin)
+                depts = load_departments()
+                return self._send_json({"items": [d["name"] for d in depts]}, origin=origin)
+
+            # ── Dept Documents (read-only) ──────────────────────────────────────
+            if u.path == "/api/dept/documents":
+                params = parse_qs(u.query)
+                name = (params.get("name", [None])[0] or "").strip()
+                if not name:
+                    return self._send_json({"error": "missing name"}, 400, origin=origin)
+                if not (tier_info.get("tier") == "admin" or can_access_scope(tier_info, f"dept::{name}")):
+                    return self._send_json({"error": "Restricted to your department."}, 403, origin=origin)
+                return self._send_json({"items": load_dept_documents(name)}, origin=origin)
 
             return self._send_json({"error": "not found"}, 404, origin=origin)
 

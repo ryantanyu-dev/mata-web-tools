@@ -192,8 +192,9 @@
       name:   'Dept Documents',
       dept:   'All departments',
       grant:  null,
-      url:    null,
-      live:   false,
+      public: true,   // visible to all signed-in users; data gated server-side by dept:: grant
+      url:    '/tools/dept-documents.html',
+      live:   true,
     },
   ];
 
