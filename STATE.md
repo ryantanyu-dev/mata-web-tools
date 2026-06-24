@@ -27,7 +27,7 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 | 06 | Incentive UI polish | qa-passed | f5f5371 | — (hosting only) | QA 2026-06-14: all 4 gates green; × btn 20px, inputs ±2px aligned, caption exact |
 | 07 | Restore login (empty Firebase apiKey) | qa-passed | b80923a | mata-tools-api-00011-pds | Fixed in same deploy as 01; confirmed signed in + data loading 2026-06-14 |
 | 08 | Repo hygiene (.gitattributes + housekeeping) | qa-passed | a353595 | — | QA 2026-06-15: all 5 gates green. Working tree clean after reset --hard. |
-| 09 | Port Dept Documents (read-only) | built | pending push | — | Built 2026-06-15. Pending push+deploy+QA. Tile: public:true. D11 read-only confirmed. |
+| 09 | Port Dept Documents (read-only) | built | b744112 | — | Built 2026-06-15. Pending push+deploy+QA. Tile: public:true. D11 read-only confirmed. |
 | 10 | Panso D2: redirect HR tabs | queued · GATED | — | — | Edits Panso repo. Gate: Panso P0 closed + Jun 16+. |
 | 11 | Panso D1: strip Incentive | queued · GATED | — | — | Edits Panso repo. Gate: as 10 + task 10 deployed green. |
 
