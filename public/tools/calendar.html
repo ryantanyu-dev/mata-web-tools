@@ -34,6 +34,8 @@
   /* ── Calendar CSS (verbatim from Panso index.html ~862) ── */
   .hrc-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;flex-wrap:wrap;gap:8px}
   .hrc-month-block{margin-bottom:28px}
+  .hrc-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,260px);gap:20px;align-items:start}
+  @media(max-width:768px){.hrc-layout{grid-template-columns:1fr}.hrc-layout #hrc-detail{position:static;margin-top:16px}}
   .hrc-month-lbl{font-size:var(--fs-md);font-weight:600;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
   .hrc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
   .hrc-hd{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:center;padding:var(--sp-4) 0 6px;font-weight:600}
@@ -283,9 +285,9 @@ async function loadCalendar() {
       '<div><strong>3-Month Calendar</strong> <span class="muted" style="font-size:var(--fs-base)">· '+totalLeaves+' leave · '+totalBdays+' birthday · '+totalAnnis+' anniversary (FTE)'+(totalRegs?' · 🎓 '+totalRegs+' regularization':'')+(totalFltReview?' · ⏳ '+totalFltReview+' floating review':'')+(totalFloating?' · 🟡 '+totalFloating+' floating':'')+'</span></div>' +
       '<div class="muted" style="font-size:var(--fs-sm)">🏝 Leave · 🎂 Birthday · 🏅 Work anniversary (FTE) · 🎓 Regularization'+(totalFltReview?' · ⏳ Floating review':'')+(totalFloating?' · 🟡 Floating':'')+'</div>' +
     '</div>' +
-    '<div style="display:flex;gap:20px;align-items:flex-start">' +
-      '<div style="flex:3;min-width:0">'+gridsHtml+'</div>' +
-      '<div id="hrc-detail" style="flex:1;min-width:180px;max-width:260px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:var(--sp-12);position:sticky;top:12px">' +
+    '<div class="hrc-layout">' +
+      '<div>'+gridsHtml+'</div>' +
+      '<div id="hrc-detail" style="background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:var(--sp-12);position:sticky;top:12px">' +
         '<div style="font-size:var(--fs-sm);font-weight:700;color:var(--muted);margin-bottom:8px" id="hrc-detail-date">'+initialDate+'</div>' +
         '<div id="hrc-detail-body">'+buildDetailHtml(initialDate)+'</div>' +
       '</div>' +
