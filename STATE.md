@@ -1,8 +1,10 @@
-phase: AWAITING-POWERSHELL
-<!-- Opus 2026-06-15: round authored. Runnable now: 08 (repo hygiene) + 09 (Dept Documents port, read-only).
-     GATED (do NOT run): 10 (Panso HR-tab redirects) + 11 (Panso incentive strip) — gate = Panso P0 closed
-     AND today ≥ Jun 16; 11 also waits on 10 deployed green. These two edit the Panso repo (Phase C/D).
-     Sonnet may run 08 then 09. Prior 01–07 all qa-passed/live. -->
+phase: EXECUTING
+<!-- Opus 2026-06-24: task 09 QA:PASS (all 10 gates green) — see row 09 Notes. Queue 01–09 done.
+     Nothing runnable remains except GATED 10 & 11. GATED (do NOT run): 10 (Panso HR-tab redirects) +
+     11 (Panso incentive strip) — gate = Panso P0 closed AND today ≥ Jun 16; 11 also waits on 10 deployed
+     green. These edit the Panso repo (Phase C/D). Today is Jun 24 (date part met); confirm Panso P0
+     closed before unblocking 10/11. -->
+<!-- Opus 2026-06-15: round authored. 08 (repo hygiene) + 09 (Dept Documents port, read-only). -->
 <!-- Opus reconciled 2026-06-15: dev queue 01–07 all qa-passed + live.
      Working tree before task 08 = CRLF churn only (no .gitattributes) + minor housekeeping. -->
 
@@ -27,7 +29,7 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 | 06 | Incentive UI polish | qa-passed | f5f5371 | — (hosting only) | QA 2026-06-14: all 4 gates green; × btn 20px, inputs ±2px aligned, caption exact |
 | 07 | Restore login (empty Firebase apiKey) | qa-passed | b80923a | mata-tools-api-00011-pds | Fixed in same deploy as 01; confirmed signed in + data loading 2026-06-14 |
 | 08 | Repo hygiene (.gitattributes + housekeeping) | qa-passed | a353595 | — | QA 2026-06-15: all 5 gates green. Working tree clean after reset --hard. |
-| 09 | Port Dept Documents (read-only) | built | b744112 | — | Built 2026-06-15. Pending push+deploy+QA. Tile: public:true. D11 read-only confirmed. |
+| 09 | Port Dept Documents (read-only) | qa-passed | b744112 | mata-tools-api-00017-7w7 | QA 2026-06-24: all 10 gates green (live + code). Tile LIVE→/tools/dept-documents.html (public:true); read-only DOM (0 forms/inputs/buttons); no `/save` route; helpers verbatim vs Panso L2148–2231; parity MG-HR→items:[] = Panso mg-hr.json (documents:[]); admin picker=12 depts re-fetches on change; empty-state "No documents saved yet."; anon API→401 (no leak); no app console errors (lone error = browser-extension msg-channel artifact). Verification notes: dept-scope 403 (non-admin querying other dept) code-verified at handler L1657 + anon-401 confirmed live (couldn't impersonate a 2nd non-admin account); 375px verified via responsive CSS @media(max-width:520px) — resize_window didn't change render viewport. |
 | 10 | Panso D2: redirect HR tabs | queued · GATED | — | — | Edits Panso repo. Gate: Panso P0 closed + Jun 16+. |
 | 11 | Panso D1: strip Incentive | queued · GATED | — | — | Edits Panso repo. Gate: as 10 + task 10 deployed green. |
 
@@ -35,9 +37,10 @@ Status values: `pending` → `in-progress` → `built` → `qa-passed` / `qa-fai
 
 ## Current active task
 
-**Round authored 2026-06-15 (Opus).** Runnable now: **08** (repo hygiene), then **09** (Dept Documents port).
-**10 & 11 are GATED** — they edit the Panso repo and must not run until the gate at the top of each file is met.
-Prior tasks 01–07 all qa-passed/live.
+**Queue 01–09 all qa-passed/live (09 QA:PASS 2026-06-24).** No ungated work remains.
+**10 & 11 are GATED** — they edit the Panso repo. Date gate (Jun 16+) is now met (today Jun 24), but the
+**Panso P0 CSV-incident gate is unconfirmed** — do NOT run 10/11 until Ryan confirms Panso P0 is closed.
+When confirmed: run 10 (HR-tab redirects), deploy+QA green, then 11 (incentive strip).
 
 ## Diagnosis summary (Opus, 2026-06-13)
 
