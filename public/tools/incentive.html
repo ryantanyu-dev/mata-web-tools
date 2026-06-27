@@ -40,13 +40,43 @@
   .back-link:hover{color:var(--text)}
   .shell-title{font-size:var(--fs-18);font-weight:700;flex:1}
   .user-chip{font-size:var(--fs-sm);color:var(--muted)}
+  .data-freshness-chip{font-size:var(--fs-sm);color:var(--muted);white-space:nowrap;padding:var(--sp-3) var(--sp-8);background:var(--panel-muted);border:1px solid var(--border);border-radius:999px}
+  /* ── Period picker container ── */
   .period-bar{display:flex;gap:var(--sp-12);align-items:center;flex-wrap:wrap;
               margin-bottom:var(--sp-24);padding:var(--sp-12) var(--sp-16);
               background:var(--panel-muted);border:1px solid var(--border);border-radius:8px}
-  .period-bar label{font-size:var(--fs-sm);font-weight:600;color:var(--muted)}
-  .period-bar select{padding:var(--sp-6) var(--sp-8);border:1px solid var(--border);
-                     border-radius:6px;background:var(--input-bg);color:var(--text);
-                     font:inherit;font-size:var(--fs-md);min-width:200px}
+  /* ── Custom select chevron (SVG dropdown arrow, ported from Panso) ── */
+  select{appearance:none;-webkit-appearance:none;-moz-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none' stroke='%236e6e73' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1l4 4 4-4'/></svg>");
+    background-repeat:no-repeat;background-position:right 12px center;
+    background-size:10px 6px;padding-right:30px}
+  select::-ms-expand{display:none}
+  html[data-theme="dark"] select{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none' stroke='%239ca3af' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1l4 4 4-4'/></svg>");
+    background-size:10px 6px}
+  /* ── Period picker (ported verbatim from Panso) ── */
+  .pp-tabs{display:inline-flex;align-items:stretch;background:#f3f3f5;border-radius:8px;padding:var(--sp-2);border:1px solid var(--border);height:36px;box-sizing:border-box}
+  .pp-tab{border:0;background:transparent;font:inherit;font-size:var(--fs-base);padding:0 var(--sp-10);border-radius:6px;cursor:pointer;color:var(--muted);display:inline-flex;align-items:center}
+  .pp-tab:hover{color:var(--text)}
+  .pp-tab.active{background:#fff;color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,0.08)}
+  .pp-tab:focus-visible{outline:2px solid var(--active-bg);outline-offset:2px}
+  .pp-tab:not(.active):hover{background:rgba(0,0,0,0.04);color:var(--text)}
+  #pp-value{padding:0 var(--sp-10);font:inherit;font-size:var(--fs-base);line-height:32px;height:100%;border:1px solid var(--border);border-radius:8px;background:#fff;min-width:180px;box-sizing:border-box}
+  .pp-cluster{display:inline-flex;align-items:stretch;background:#f3f3f5;border:1px solid var(--border);border-radius:8px;padding:var(--sp-2);gap:2px;height:36px;box-sizing:border-box}
+  .pp-cluster > select,.pp-cluster > .pp-btn{font:inherit;font-size:var(--fs-base);line-height:1;background:transparent;border:0;color:var(--muted);cursor:pointer;border-radius:6px;padding:0 var(--sp-10);font-weight:600;letter-spacing:0.2px;display:inline-flex;align-items:center}
+  .pp-cluster > select{background-color:#fff;color:var(--text);padding:0 28px 0 10px;min-width:160px;border:1px solid var(--border);height:100%;box-sizing:border-box;background-position:right 10px center;background-size:10px 6px}
+  .pp-cluster > .pp-btn#btn-pp-prev,.pp-cluster > .pp-btn#btn-pp-next{background:#fff;border:1px solid var(--border);font-size:var(--fs-lg);font-weight:700;color:var(--text);padding:0 var(--sp-10);min-width:28px}
+  .pp-cluster > .pp-btn#btn-pp-prev:hover:not(:disabled),.pp-cluster > .pp-btn#btn-pp-next:hover:not(:disabled){background:var(--text);color:#fff;border-color:var(--text)}
+  .pp-cluster > .pp-btn:hover:not(:disabled){background:#fff;color:var(--text)}
+  .pp-cluster > .pp-btn:disabled{opacity:0.35;cursor:default}
+  .pp-cluster > .pp-btn-today:hover:not(:disabled){background:var(--text);color:#fff}
+  /* Dark mode overrides for pp- components */
+  html[data-theme="dark"] .pp-tabs,html[data-theme="dark"] .pp-cluster{background:var(--panel-muted);border-color:var(--border)}
+  html[data-theme="dark"] .pp-cluster > select,html[data-theme="dark"] #pp-value{background:var(--input-bg);color:var(--text);border-color:var(--border)}
+  html[data-theme="dark"] .pp-cluster > .pp-btn{background:var(--panel);color:var(--text);border-color:var(--border)}
+  html[data-theme="dark"] .pp-cluster > .pp-btn#btn-pp-prev,html[data-theme="dark"] .pp-cluster > .pp-btn#btn-pp-next{background:var(--panel);color:var(--text);border-color:var(--border)}
+  html[data-theme="dark"] .pp-tab.active{background:var(--panel);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,0.35)}
+  html[data-theme="dark"] .pp-cluster > .pp-btn#btn-pp-next:hover:not(:disabled),html[data-theme="dark"] .pp-cluster > .pp-btn-today:hover:not(:disabled){background:var(--active-bg);color:var(--active-fg);border-color:var(--active-bg)}
   .ic-wrap{padding:0}
   .ic-hd{margin-bottom:var(--sp-12)}
   .ic-title{font-size:var(--fs-18);font-weight:700}
@@ -63,6 +93,10 @@
             column-gap:20px;row-gap:6px;margin-top:12px}
   /* Card layout — hidden on desktop, shown on mobile */
   #ic-cards { display: none; }
+  /* ── Incentive column — visually distinct from base/paid (task 13) ── */
+  /* Applied to the TH header, TD body cells, and tfoot total for the Incentive column. */
+  .ic-inc-col { border-left: 3px solid var(--good) !important; background: #f0fdf4; }
+  html[data-theme="dark"] .ic-inc-col { background: rgba(34,197,94,0.08); }
 
   /* ── Mobile responsive (≤ 640px) ── */
   @media (max-width: 640px) {
@@ -77,11 +111,9 @@
       gap: var(--sp-8);
       padding: var(--sp-10) var(--sp-12);
     }
-    .period-bar select {
-      min-width: 0;
-      flex: 1;
-      max-width: 100%;
-    }
+    #pp-value { min-width: 0 !important; width: 100%; box-sizing: border-box; }
+    .pp-cluster { flex-wrap: wrap; gap: 4px; }
+    .pp-tabs { flex-wrap: wrap; }
     /* Stack Steps to a single column */
     .ic-steps {
       grid-template-columns: 1fr;
@@ -128,7 +160,9 @@
     }
     .ic-card-field label { color: var(--muted); display: block; }
     .ic-card-field value { font-weight: 600; }
-    .ic-card-incentive value { color: var(--good); font-size: var(--fs-md); }
+    .ic-card-incentive { background: #f0fdf4; border-radius: 6px; padding: 4px 6px; margin-top: 2px; }
+    .ic-card-incentive value { color: var(--good); font-size: var(--fs-md); font-weight: 700; }
+    html[data-theme="dark"] .ic-card-incentive { background: rgba(34,197,94,0.08); }
   }
 </style>
 </head>
@@ -140,23 +174,24 @@
     <a class="back-link" href="/">← Tools</a>
     <div class="shell-title">MG-Finance · Incentive Calculator</div>
     <div class="user-chip" id="user-chip"></div>
+    <div class="data-freshness-chip" id="data-freshness" title="When the data directory was last updated (sync time)">Data as of —</div>
   </div>
 
-  <div class="period-bar">
-    <label for="period-type">Period</label>
-    <select id="period-type">
-      <option value="payperiod">Pay period</option>
-      <option value="week">Week</option>
-      <option value="month">Month</option>
-    </select>
-    <select id="period-value">
-      <option>Loading…</option>
-    </select>
-    <button id="period-reload-btn"
-      style="padding:var(--sp-6) var(--sp-12);border:1px solid var(--border);
-             border-radius:6px;background:transparent;color:var(--text);
-             font:inherit;font-size:var(--fs-md);cursor:pointer">Reload</button>
+  <!-- ===== Shared period picker (ported verbatim from Panso) — keep in sync with Intern Allowance Matrix ===== -->
+  <div class="period-bar" id="period-picker">
+    <div class="pp-tabs" role="tablist">
+      <button type="button" class="pp-tab active" data-pp-type="payperiod" role="tab" aria-selected="true">Pay-period</button>
+      <button type="button" class="pp-tab" data-pp-type="week" role="tab" aria-selected="false">Week</button>
+      <button type="button" class="pp-tab" data-pp-type="month" role="tab" aria-selected="false">Month</button>
+    </div>
+    <div class="pp-cluster" role="group" aria-label="Period navigation">
+      <select id="pp-value" aria-label="Select period"></select>
+      <button type="button" class="pp-btn" id="btn-pp-prev" title="Previous period" aria-label="Previous period">‹</button>
+      <button type="button" class="pp-btn" id="btn-pp-next" title="Next period" aria-label="Next period">›</button>
+      <button type="button" class="pp-btn pp-btn-today" id="btn-today" title="Snap to the period containing today">Today</button>
+    </div>
   </div>
+  <!-- ===== / Shared period picker ===== -->
 
   <div id="dept-body"></div>
 </div>
@@ -204,6 +239,54 @@ function currentPeriodLabel() {
   const hit  = list.find(p => p.value === STATE.period.value);
   return hit ? hit.label : (STATE.period.value || '');
 }
+
+// ===== Shared period picker (ported verbatim from Panso) — keep in sync with Intern Allowance Matrix =====
+function refreshPeriodPicker() {
+  // Tab active state
+  document.querySelectorAll('.pp-tab').forEach(btn => {
+    const on = btn.dataset.ppType === STATE.period.type;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  // Value dropdown
+  const list = STATE.periods[STATE.period.type] || [];
+  const sel  = document.getElementById('pp-value');
+  if (!list.length) { sel.innerHTML = '<option>No data</option>'; sel.disabled = true; return; }
+  sel.disabled = false;
+  // Today button: enabled when there is a period and we are not already on today's period.
+  const todayBtn = document.getElementById('btn-today');
+  if (todayBtn) {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const now    = list.find(p => p.start <= todayIso && todayIso <= p.end);
+    const target = now || list[list.length - 1];
+    todayBtn.disabled = !target || STATE.period.value === target.value;
+    todayBtn.title = now
+      ? ('Snap to ' + (now.label || now.value))
+      : (target ? ('Today has no data. Snap to latest (' + (target.label || target.value) + ')') : 'No periods available');
+  }
+  // Prev/next arrows: disabled at list boundaries.
+  const idx     = list.findIndex(p => p.value === STATE.period.value);
+  const prevBtn = document.getElementById('btn-pp-prev');
+  const nextBtn = document.getElementById('btn-pp-next');
+  if (prevBtn) { prevBtn.disabled = idx <= 0; prevBtn.title = idx > 0 ? 'Go to ' + (list[idx-1].label || list[idx-1].value) : 'At the start'; }
+  if (nextBtn) { nextBtn.disabled = idx < 0 || idx >= list.length - 1; nextBtn.title = (idx >= 0 && idx < list.length - 1) ? 'Go to ' + (list[idx+1].label || list[idx+1].value) : 'At the latest'; }
+  sel.innerHTML = list.slice().reverse().map(p =>
+    '<option value="' + esc(p.value) + '"' + (p.value === STATE.period.value ? ' selected' : '') + '>' + esc(p.label) + '</option>'
+  ).join('');
+}
+
+function stepPeriod(delta) {
+  const list = STATE.periods[STATE.period.type] || [];
+  const idx  = list.findIndex(p => p.value === STATE.period.value);
+  if (idx < 0) return;
+  const nextIdx = idx + delta;
+  if (nextIdx < 0 || nextIdx >= list.length) return;
+  STATE.period = {type: STATE.period.type, value: list[nextIdx].value};
+  refreshPeriodPicker();
+  _incentiveState.lastItems = null;
+  renderFinanceIncentive('MG - Finance');
+}
+// ===== / Shared period picker =====
 
 let _incentiveState = {
   project:  '',
@@ -574,7 +657,7 @@ function renderIncentiveResult(data) {
       : '<span class="muted" style="color:#b91c1c">— not in 201</span>';
     var baseCell = it.has_rate ? '₱' + it.base.toFixed(2) : '<span class="muted">—</span>';
     var incCell  = (fte && it.has_rate)
-      ? '<strong>₱' + it.incentive.toFixed(2) + '</strong>'
+      ? '<strong style="color:var(--good)">₱' + it.incentive.toFixed(2) + '</strong>'
       : '<span class="muted">—</span>';
     var roleTag  = fte ? '' :
       '<span style="margin-left:6px;font-size:var(--fs-9-5);font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fcd34d;border-radius:999px;padding:1px var(--sp-7);white-space:nowrap">not eligible · ' + esc(it.role || 'non-FTE') + '</span>';
@@ -587,7 +670,7 @@ function renderIncentiveResult(data) {
       '<td style="padding:var(--sp-8) var(--sp-12);text-align:right">' + it.hours.toFixed(2) + 'h</td>' +
       '<td style="padding:var(--sp-8) var(--sp-12);text-align:right">' + rateCell + '</td>' +
       '<td style="padding:var(--sp-8) var(--sp-12);text-align:right">' + baseCell + '</td>' +
-      '<td style="padding:var(--sp-8) var(--sp-12);text-align:right">' + incCell + '</td>' +
+      '<td class="ic-inc-col" style="padding:var(--sp-8) var(--sp-12);text-align:right">' + incCell + '</td>' +
       '</tr>';
   }).join('');
 
@@ -646,7 +729,7 @@ function renderIncentiveResult(data) {
             '<th style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600">Hours</th>' +
             '<th style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600">Hourly rate</th>' +
             '<th style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600">Base (rate × hrs)</th>' +
-            '<th style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600" title="Bonus on top of base pay">Incentive<br><span class="muted" id="ic-inc-pct" style="font-weight:400;font-size:var(--fs-sm)">+' + ((data.multiplier - 1) * 100).toFixed(0) + '% of base</span></th>' +
+            '<th class="ic-inc-col" style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600;color:var(--good)" title="Bonus on top of base pay — what we CAN give">Incentive<br><span id="ic-inc-pct" style="font-weight:400;font-size:var(--fs-sm);color:var(--muted)">+' + ((data.multiplier - 1) * 100).toFixed(0) + '% of base</span></th>' +
           '</tr>' +
         '</thead>' +
         '<tbody>' + rowsHtml + '</tbody>' +
@@ -657,7 +740,7 @@ function renderIncentiveResult(data) {
             '<td style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600" id="ic-tot-hours">' + totals.hours.toFixed(2) + 'h</td>' +
             '<td></td>' +
             '<td style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:600" id="ic-tot-base">₱' + totals.base.toFixed(2) + '</td>' +
-            '<td style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:700;color:var(--good)" id="ic-tot-incentive">₱' + totals.incentive.toFixed(2) + '</td>' +
+            '<td class="ic-inc-col" style="padding:var(--sp-10) var(--sp-12);text-align:right;font-weight:700;color:var(--good)" id="ic-tot-incentive">₱' + totals.incentive.toFixed(2) + '</td>' +
           '</tr>' +
         '</tfoot>' +
       '</table>' +
@@ -787,43 +870,70 @@ function renderIncentiveResult(data) {
     }
     STATE.periods = periodsData;
 
-    var typeSelect  = document.getElementById('period-type');
-    var valueSelect = document.getElementById('period-value');
+    // Persistent freshness indicator: show DATA_DIR mtime from /api/periods
+    (function() {
+      var el = document.getElementById('data-freshness');
+      if (!el) return;
+      var v = periodsData && periodsData.data_synced_at;
+      el.textContent = 'Data as of ' + (v || '—');
+    })();
 
-    function populatePeriodValues(type) {
-      var list = (STATE.periods[type] || []).slice().reverse();
-      var todayStr = new Date().toISOString().slice(0, 10); // "2026-06-13"
-      valueSelect.innerHTML = list.map(function(p) {
-        return '<option value="' + esc(p.value) + '">' + esc(p.label) + '</option>';
-      }).join('');
-      if (list.length) {
-        STATE.period.type = type;
-        // Default to the most recent period that has already started (start <= today).
-        // Falls back to list[0] (most recent) if every period is in the future.
-        var defaultPeriod = list.find(function(p) { return p.start <= todayStr; }) || list[0];
-        STATE.period.value = defaultPeriod.value;
-        valueSelect.value  = defaultPeriod.value;
-      }
+    // ===== Shared period picker bootstrap =====
+    // Set initial period: most recent already-started period for the default type (payperiod).
+    {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const defaultType = 'payperiod';
+      const defaultList = STATE.periods[defaultType] || [];
+      const defaultPeriod = defaultList.slice().reverse().find(p => p.start <= todayStr) || defaultList[defaultList.length - 1];
+      STATE.period.type  = defaultType;
+      STATE.period.value = defaultPeriod ? defaultPeriod.value : '';
     }
-
-    populatePeriodValues(typeSelect.value);
-
-    typeSelect.addEventListener('change', function() {
-      _incentiveState.lastItems = null;
-      populatePeriodValues(typeSelect.value);
-      document.getElementById('ic-result').innerHTML = '';
+    // Tab click: switch type, snap to best period, re-render.
+    document.querySelectorAll('.pp-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.ppType;
+        if (type === STATE.period.type) return;
+        const list = STATE.periods[type] || [];
+        if (!list.length) return;
+        const todayIso = new Date().toISOString().slice(0, 10);
+        const best = list.slice().reverse().find(p => p.start <= todayIso) || list[list.length - 1];
+        STATE.period = {type, value: best ? best.value : list[list.length - 1].value};
+        refreshPeriodPicker();
+        _incentiveState.lastItems = null;
+        document.getElementById('ic-result').innerHTML = '';
+        renderFinanceIncentive('MG - Finance');
+      });
     });
-    valueSelect.addEventListener('change', function() {
-      STATE.period.type  = typeSelect.value;
-      STATE.period.value = valueSelect.value;
+    // Value select: change period within current type.
+    document.getElementById('pp-value').addEventListener('change', e => {
+      STATE.period = {type: STATE.period.type, value: e.target.value};
       _incentiveState.lastItems = null;
       document.getElementById('ic-result').innerHTML = '';
-    });
-    document.getElementById('period-reload-btn').addEventListener('click', function() {
-      STATE.period.type  = typeSelect.value;
-      STATE.period.value = valueSelect.value;
       renderFinanceIncentive('MG - Finance');
     });
+    // Today button: snap to current period.
+    const todayBtnEl = document.getElementById('btn-today');
+    if (todayBtnEl) {
+      todayBtnEl.addEventListener('click', () => {
+        const todayIso = new Date().toISOString().slice(0, 10);
+        const list = STATE.periods[STATE.period.type] || [];
+        if (!list.length) return;
+        const containsToday = list.find(p => p.start <= todayIso && todayIso <= p.end);
+        const target = containsToday || list[list.length - 1];
+        if (!target || STATE.period.value === target.value) return;
+        STATE.period = {type: STATE.period.type, value: target.value};
+        refreshPeriodPicker();
+        _incentiveState.lastItems = null;
+        renderFinanceIncentive('MG - Finance');
+      });
+    }
+    // Prev/next arrow buttons.
+    const prevBtnEl = document.getElementById('btn-pp-prev');
+    const nextBtnEl = document.getElementById('btn-pp-next');
+    if (prevBtnEl) prevBtnEl.addEventListener('click', () => stepPeriod(-1));
+    if (nextBtnEl) nextBtnEl.addEventListener('click', () => stepPeriod(+1));
+    refreshPeriodPicker();
+    // ===== / Shared period picker bootstrap =====
 
     document.getElementById('loading-wall').style.display = 'none';
     document.getElementById('shell').style.display        = 'block';
