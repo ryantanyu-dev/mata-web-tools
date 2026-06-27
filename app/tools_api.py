@@ -425,8 +425,21 @@ def slugify_dept(name):
 
 
 def docs_dir():
+    """Return the dept-documents directory (read-only view of Panso's single source).
+
+    D11 decision (2026-06-27): read-only single shared bucket — no drift possible.
+      Panso writes  → gs://panso-ph-data/data/dept-documents/  (read/write FUSE mount)
+      Mata reads    → same path                                 (readonly=true FUSE mount,
+                      see cloudbuild.yaml --add-volume readonly=true)
+    The mkdir is wrapped in try/except because the GCS FUSE read-only mount will raise
+    OSError(EROFS) if the directory does not yet exist locally; if it already exists in
+    the bucket the call is a no-op and succeeds.
+    """
     d = DATA_DIR / "dept-documents"
-    d.mkdir(parents=True, exist_ok=True)
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass  # read-only FUSE mount — directory must already exist in bucket
     return d
 
 
@@ -549,7 +562,16 @@ def list_available_periods():
             months.append({"type": "month", "value": value,
                             "label": format_period_label("month", value, s, e),
                             "start": s.isoformat(), "end": e.isoformat()})
-    return {"week": weeks, "payperiod": pps, "month": months}
+    # Freshness signal: DATA_DIR mtime as ISO UTC datetime, or None if unavailable.
+    # Used by the frontend persistent "Data as of —" header chip (task 14).
+    data_synced_at = None
+    try:
+        if DATA_DIR.exists():
+            mtime = DATA_DIR.stat().st_mtime
+            data_synced_at = dt.datetime.utcfromtimestamp(mtime).strftime("%Y-%m-%d %H:%M UTC")
+    except OSError:
+        pass
+    return {"week": weeks, "payperiod": pps, "month": months, "data_synced_at": data_synced_at}
 
 
 # ── Static file serving ─────────────────────────────────────────────────────

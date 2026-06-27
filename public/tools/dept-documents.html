@@ -127,6 +127,7 @@ async function loadDocs(name) {
     body.innerHTML =
       '<div class="docs-section">' +
         '<ul class="docs-list">' + rows + '</ul>' +
+        '<p class="muted" style="font-size:var(--fs-sm);margin-top:var(--sp-8);padding:0 var(--sp-8)">Synced from the department\'s Panso documents.</p>' +
       '</div>';
   } catch (e) {
     body.innerHTML = '<div class="banner">Error: ' + esc(String(e)) + '</div>';
