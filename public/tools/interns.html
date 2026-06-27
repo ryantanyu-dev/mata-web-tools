@@ -131,7 +131,7 @@ async function apiFetch(path) {
 const _COLORS = ['#f97316','#8b5cf6','#0ea5e9','#16a34a','#f43f5e','#ca8a04','#14b8a6','#6366f1'];
 let _periods = null;
 let _filter  = null;   // null | bucket string
-let _view    = 'cards'; // 'cards' | 'gantt'
+let _view    = 'cards'; // 'cards' | 'gantt' | 'month'
 let _lastData = null;
 
 const BUCKET_LABEL = {
@@ -231,8 +231,11 @@ function renderInterns(data) {
   const headerHtml =
     '<div class="hri-header">' +
       '<div><strong>Intern progress</strong> <span class="muted">· target from 201 col AF · grouped by supervisor</span>' + filterBanner + '</div>' +
-      '<button type="button" id="hri-view-toggle" style="padding:2px 10px;border:1px solid var(--border);border-radius:999px;cursor:pointer;font-size:var(--fs-sm);font-weight:600;background:transparent;color:var(--muted)">' +
-        (_view === 'gantt' ? '⊞ Cards' : '▬ Gantt') + '</button>' +
+      '<div style="display:flex;gap:4px">' +
+        [['cards','⊞ Cards'],['gantt','▬ Gantt'],['month','📅 Month']].map(([v,lbl])=>
+          '<button type="button" data-vbtn="'+v+'" style="padding:2px 10px;border:1px solid var(--border);border-radius:999px;cursor:pointer;font-size:var(--fs-sm);font-weight:600;background:'+(v===_view?'var(--text)':'transparent')+';color:'+(v===_view?'var(--bg)':'var(--muted)')+'">'+lbl+'</button>'
+        ).join('') +
+      '</div>' +
     '</div>';
 
   let viewBody;
@@ -274,6 +277,46 @@ function renderInterns(data) {
         '<thead><tr><th style="min-width:140px;padding:4px 8px;text-align:left;font-size:var(--fs-sm);color:var(--muted)">Intern</th>' + hdrs + '</tr></thead>' +
         '<tbody>' + (rows || '<tr><td colspan="99" class="empty" style="padding:var(--sp-10)">No interns match filter.</td></tr>') + '</tbody></table></div>';
     }
+  } else if (_view === 'month') {
+    const ppList = (_periods && _periods.payperiod) || [];
+    const todayIso = isoLocal(new Date());
+    const todayMonth = todayIso.slice(0,7);
+    const allFirst = items.map(x => x.first_date).filter(Boolean).sort();
+    const earliestMonth = (allFirst[0] || todayIso).slice(0,7);
+    const months = [];
+    let cur = new Date(earliestMonth + '-01T00:00:00');
+    while (cur.toISOString().slice(0,7) <= todayMonth) {
+      months.push(cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0'));
+      cur.setMonth(cur.getMonth()+1);
+    }
+    const visMonths = months.slice(-14);
+    if (!visMonths.length) {
+      viewBody = '<div class="muted" style="padding:var(--sp-10)">No data for Month view.</div>';
+    } else {
+      const hdrs = visMonths.map(ym => {
+        const [y,m] = ym.split('-');
+        const label = new Date(Number(y),Number(m)-1,1).toLocaleString('default',{month:'short'})+' \''+y.slice(2);
+        return '<th style="min-width:52px;font-size:var(--fs-xs);font-weight:600;text-align:center;padding:2px 4px;white-space:nowrap;color:var(--muted)">'+esc(label)+'</th>';
+      }).join('');
+      const rows = managerOrder.map((mgr, gi) => {
+        const col = _COLORS[gi % _COLORS.length];
+        const grp = (byManager[mgr]||[]).filter(it => !_filter || it.status_bucket===_filter || (_filter==='no_target'&&it.target_missing));
+        if (!grp.length) return '';
+        const mgrRow = '<tr><td colspan="'+(visMonths.length+1)+'" style="background:'+col+'18;border-left:3px solid '+col+';padding:2px 8px;font-size:var(--fs-sm);font-weight:700;color:'+col+'">'+esc(mgr)+'</td></tr>';
+        const irows = grp.map(it => {
+          const hireMonth = it.first_date ? it.first_date.slice(0,7) : null;
+          const cells = visMonths.map(ym => {
+            const active = hireMonth && ym >= hireMonth && ym <= todayMonth;
+            if (!active) return '<td style="border-right:1px solid var(--border)"></td>';
+            const pct = it.target_missing ? 0 : Math.min(100, it.pct_capped||0);
+            return '<td style="padding:2px;border-right:1px solid var(--border)"><div style="height:14px;background:var(--border);border-radius:2px;overflow:hidden"><div class="hri-bar-fill b-'+it.status_bucket+'" style="width:'+pct.toFixed(0)+'%;height:100%"></div></div></td>';
+          }).join('');
+          return '<tr style="border-bottom:1px solid var(--border)"><td style="padding:2px 8px;white-space:nowrap;font-size:var(--fs-base);min-width:140px"><span style="color:'+col+';font-weight:500">'+esc(it.name||it.email)+'</span><div class="muted" style="font-size:var(--fs-xs)">'+(it.target_missing?'—h':(it.hours_logged||0).toFixed(0)+'/'+(it.target_hours||0).toFixed(0)+'h')+'</div></td>'+cells+'</tr>';
+        }).join('');
+        return mgrRow + irows;
+      }).join('');
+      viewBody = '<div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:var(--fs-base)"><thead><tr><th style="min-width:140px;padding:4px 8px;text-align:left;font-size:var(--fs-sm);color:var(--muted)">Intern</th>'+hdrs+'</tr></thead><tbody>'+(rows||'<tr><td colspan="99" class="empty" style="padding:var(--sp-10)">No interns match filter.</td></tr>')+'</tbody></table></div>';
+    }
   } else {
     viewBody = managerOrder.map((mgr, gi) => {
       const col  = _COLORS[gi % _COLORS.length];
@@ -306,8 +349,7 @@ function renderInterns(data) {
       renderInterns(_lastData);
     });
   });
-  const tog = document.getElementById('hri-view-toggle');
-  if (tog) tog.addEventListener('click', () => { _view = _view==='gantt'?'cards':'gantt'; renderInterns(_lastData); });
+  body.querySelectorAll('[data-vbtn]').forEach(btn => { btn.addEventListener('click', () => { _view = btn.dataset.vbtn; renderInterns(_lastData); }); });
   const clr = document.getElementById('hri-clear');
   if (clr) clr.addEventListener('click', () => { _filter = null; renderInterns(_lastData); });
 }
