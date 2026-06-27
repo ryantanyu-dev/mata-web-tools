@@ -13,3 +13,4 @@ _pipeline/
 # Local QA scratch (also excluded by .gcloudignore)
 qa_scratch/
 qa_*_diff.py
+qa/

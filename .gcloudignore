@@ -9,3 +9,6 @@ qa_scratch/
 
 # Other local dev artifacts
 *.bat
+
+# Pipeline QA output at repo root
+qa/
