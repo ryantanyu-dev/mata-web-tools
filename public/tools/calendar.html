@@ -52,14 +52,14 @@
   .hrc-entry.hrc-leave         {background:#fef3c7;color:#78350f}
   .hrc-entry.hrc-birthday      {background:#fce7f3;color:#9d174d}
   .hrc-entry.hrc-milestone     {background:#dbeafe;color:#1e3a8a}
-  .hrc-entry.hrc-regularization{background:#ffe4e6;color:#9f1239;border-left:2px solid #f43f5e;font-weight:600}
+  .hrc-entry.hrc-regularization{background:#dcfce7;color:#14532d;border-left:3px solid #16a34a;font-weight:700}
   .hrc-entry.hrc-more          {background:#e5e7eb;color:#626267}
   .coming-soon-banner{padding:var(--sp-24);border:1px dashed var(--border);border-radius:10px;color:var(--muted);text-align:left;background:#fafafa}
   html[data-theme="dark"] .hrc-cell{background:var(--panel);border-color:var(--border)}
   html[data-theme="dark"] .hrc-cell.is-other{background:var(--panel-muted)}
   html[data-theme="dark"] .hrc-entry.hrc-more{background:var(--panel-muted);color:var(--muted)}
   /* ── Floating / floating_review ─────────────────────────────────────────────── */
-  .hrc-entry.hrc-floating-review{background:#fef9c3;color:#92400e;border-left:2px solid #f59e0b;font-weight:600}
+  .hrc-entry.hrc-floating-review{background:#fee2e2;color:#7f1d1d;border-left:3px solid #ef4444;font-weight:700;outline:1px solid #fca5a5;outline-offset:-1px}
   .hrc-entry.hrc-float-badge    {border-left:2px solid #f59e0b !important}
   .verify-201{font-size:var(--fs-sm);color:#b45309;text-decoration:none;border:1px solid #fcd34d;border-radius:4px;padding:3px 8px;white-space:nowrap}
   .verify-201:hover{background:#fef3c7}
@@ -206,7 +206,7 @@ async function loadCalendar() {
         if(f.flag==='floating' && !isFltReview) typeClass+=' hrc-float-badge';
         const tail=[];
         if(isFltReview){
-          tail.push('<div class="ddp-t-name" style="color:#f59e0b">⏳ Floating review</div>');
+          tail.push('<div class="ddp-t-name" style="color:#ef4444;font-weight:700">⚠️ Action required: review floating status</div>');
           if(f.message) tail.push('<div class="ddp-t-desc">'+esc(f.message)+'</div>');
         } else if(e.kind==='leave'){
           if(f.kind)        tail.push('<div class="ddp-t-name">'+esc(f.kind)+'</div>');
@@ -228,7 +228,7 @@ async function loadCalendar() {
           tail.push('<div class="ddp-sub" style="margin-top:4px">FTE start: '+esc(f.sdate_fte||'')+'</div>');
         }
         const popHtml = '<div class="ddp-hd">'+icon+' '+esc(f.user_name||f.user_email||e.label)+'</div>'+(f.user_email?'<div class="ddp-sub">uid · '+esc(f.user_email)+'</div>':'')+tail.join('');
-        return '<div class="hrc-entry '+typeClass+'" data-pop="'+esc(popHtml)+'">'+icon+' '+esc(e.label)+'</div>';
+        return '<div class="hrc-entry '+typeClass+'" data-pop="'+esc(popHtml)+'">'+(isFltReview?'⚠️ Review — ':icon+' ')+esc(e.label)+'</div>';
       }).join('');
       cells += '<div class="'+cls+'" data-date="'+iso+'"><div class="hrc-dnum">'+d.getDate()+'</div>'+entryHtml+'</div>';
     }
@@ -282,7 +282,7 @@ async function loadCalendar() {
   body.innerHTML =
     '<div class="hrc-header">' +
       '<div><strong>3-Month Calendar</strong> <span class="muted" style="font-size:var(--fs-base)">· '+totalLeaves+' leave · '+totalBdays+' birthday · '+totalAnnis+' anniversary (FTE)'+(totalRegs?' · 🎓 '+totalRegs+' regularization':'')+(totalFltReview?' · ⏳ '+totalFltReview+' floating review':'')+(totalFloating?' · 🟡 '+totalFloating+' floating':'')+'</span></div>' +
-      '<div class="muted" style="font-size:var(--fs-sm)">🏝 Leave · 🎂 Birthday · 🏅 Work anniversary (FTE) · 🎓 Regularization'+(totalFltReview?' · ⏳ Floating review':'')+(totalFloating?' · 🟡 Floating':'')+'</div>' +
+      '<div class="muted" style="font-size:var(--fs-sm)">🏝 Leave · 🎂 Birthday · 🏅 Anniversary (FTE) · 🎓 Regularization (FTE start)'+(totalFltReview?' · ⚠️ Floating review (action required)':"")+(totalFloating?' · 🟡 Floating':'')+'</div>' +
     '</div>' +
     '<div class="hrc-layout">' +
       '<div>'+gridsHtml+'</div>' +
