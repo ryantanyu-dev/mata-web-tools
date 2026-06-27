@@ -218,10 +218,10 @@ function renderInterns(data) {
       noTargetPill +
       '<div class="hri-stat b-avg" title="Mean progress of the '
         + ((stats.total||0) - (stats.no_target||0))
-        + ' interns with a target set (201 col AF) · uncapped · over-target interns count above 100%">' +
+        + ' interns with a target set (201 col AF) · capped at 100% per intern">' +
         '<span class="hri-stat-num">' + (stats.avg_pct||0).toFixed(1) + '%</span>' +
         '<span class="hri-stat-lbl">Avg progress</span>' +
-        '<span style="font-size:var(--fs-xs);color:var(--muted);line-height:1.2">targeted interns · uncapped</span>' +
+        '<span style="font-size:var(--fs-xs);color:var(--muted);line-height:1.2">targeted interns · capped at 100%</span>' +
       '</div>' +
     '</div>';
 
@@ -281,7 +281,7 @@ function renderInterns(data) {
       if (!list.length && _filter) return '';
       const total    = (byManager[mgr]||[]).length;
       const targeted = (byManager[mgr]||[]).filter(x => !x.target_missing);
-      const avg      = targeted.length ? targeted.reduce((s,x)=>s+(x.pct||0),0)/targeted.length : null;
+      const avg      = targeted.length ? targeted.reduce((s,x)=>s+Math.min(100,x.pct||0),0)/targeted.length : null;
       const avgLabel = avg === null ? 'avg —' : 'avg ' + avg.toFixed(0) + '%';
       return '<div class="hri-mgr-group">' +
         '<div class="hri-mgr-hd" style="border-left:3px solid ' + col + '">' +

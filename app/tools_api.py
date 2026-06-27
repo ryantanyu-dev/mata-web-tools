@@ -1252,7 +1252,7 @@ class Handler(BaseHTTPRequestHandler):
                     by_manager[k].sort(key=lambda x: (-(x["pct"] or 0), (x["name"] or "").lower()))
                 manager_order = sorted(by_manager.keys(),
                                        key=lambda m: (-len(by_manager[m]), m.lower()))
-                _pct_valid = [x["pct"] for x in out_items if x.get("pct") is not None]
+                _pct_valid = [x["pct_capped"] for x in out_items if x.get("pct_capped") is not None]
                 stats = {
                     "total":       len(out_items),
                     "no_target":   sum(1 for x in out_items if x.get("target_missing")),
