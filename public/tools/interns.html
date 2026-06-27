@@ -162,11 +162,16 @@ function renderCard(it, color) {
     ? '<span class="muted">—h</span>'
     : (it.hours_logged||0).toFixed(1)+'h <span class="muted">/ '+(it.target_hours||0).toFixed(0)+'h</span>';
   const pctLabel = noTarget ? '—' : (it.pct||0).toFixed(0) + '%';
+  const overTarget = !noTarget && (it.pct || 0) > 100;
+  const overTargetBadge = overTarget
+    ? '<span style="font-size:var(--fs-xs);color:#d97706;font-weight:600;margin-left:4px" '
+        + 'title="Hours exceed the 201 target — verify col AF or logged hours">↑ over target</span>'
+    : '';
   return '<div class="hri-card' + (noTarget?' hri-card-warn':'') + '" title="' + esc(firstNote) + '">' +
     targetWarn +
     '<div class="hri-card-row">' +
       '<div class="hri-card-name" style="color:' + (color||'var(--text)') + '">' + esc(it.name||it.email) + '</div>' +
-      '<div class="hri-card-pct">' + pctLabel + '</div>' +
+      '<div class="hri-card-pct">' + pctLabel + overTargetBadge + '</div>' +
     '</div>' +
     '<div class="hri-card-email">' + esc(it.email) + '</div>' +
     '<div class="hri-bar">' +
@@ -211,9 +216,12 @@ function renderInterns(data) {
         '</div>'
       ).join('') +
       noTargetPill +
-      '<div class="hri-stat b-avg">' +
+      '<div class="hri-stat b-avg" title="Mean progress of the '
+        + ((stats.total||0) - (stats.no_target||0))
+        + ' interns with a target set (201 col AF) · uncapped · over-target interns count above 100%">' +
         '<span class="hri-stat-num">' + (stats.avg_pct||0).toFixed(1) + '%</span>' +
         '<span class="hri-stat-lbl">Avg progress</span>' +
+        '<span style="font-size:var(--fs-xs);color:var(--muted);line-height:1.2">targeted interns · uncapped</span>' +
       '</div>' +
     '</div>';
 
