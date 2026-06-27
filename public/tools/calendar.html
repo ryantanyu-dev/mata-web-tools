@@ -48,7 +48,7 @@
   .hrc-cell .hrc-dnum{font-size:var(--fs-sm);font-weight:600;color:var(--text);line-height:1;margin-bottom:3px}
   .hrc-cell.is-other .hrc-dnum{color:#c5c5c8}
   .hrc-cell.hrc-selected{outline:2px solid var(--text);outline-offset:-2px}
-  .hrc-entry{font-size:var(--fs-xs);padding:var(--sp-2) var(--sp-4);border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:help;position:relative}
+  .hrc-entry{font-size:var(--fs-xs);padding:var(--sp-2) var(--sp-4);border-radius:3px;white-space:normal;word-break:break-word;overflow:hidden;cursor:help;position:relative}
   .hrc-entry.hrc-leave         {background:#fef3c7;color:#78350f}
   .hrc-entry.hrc-birthday      {background:#fce7f3;color:#9d174d}
   .hrc-entry.hrc-milestone     {background:#dbeafe;color:#1e3a8a}
@@ -193,7 +193,7 @@ async function loadCalendar() {
         leaveC+=entries.filter(e=>e.kind==='leave').length;
         fltReviewC+=entries.filter(e=>e.kind==='floating_review').length;
       }
-      const entryHtml = entries.slice(0,4).map(e=>{
+      const entryHtml = entries.map(e=>{
         const isReg = e.kind==='regularization';
         const isFltReview = e.kind==='floating_review';
         let typeClass, icon;
@@ -227,13 +227,12 @@ async function loadCalendar() {
           if(f.status==='Floating') tail.push('<div class="ddp-sub" style="color:#f59e0b;margin-top:2px">🟡 Floating</div>');
           tail.push('<div class="ddp-sub" style="margin-top:4px">FTE start: '+esc(f.sdate_fte||'')+'</div>');
         }
-        const popHtml = '<div class="ddp-hd">'+icon+' '+esc(f.user_name||f.user_email||e.label)+'</div>'+(f.user_email?'<div class="ddp-sub">'+esc(f.user_email)+'</div>':'')+tail.join('');
+        const popHtml = '<div class="ddp-hd">'+icon+' '+esc(f.user_name||f.user_email||e.label)+'</div>'+(f.user_email?'<div class="ddp-sub">uid · '+esc(f.user_email)+'</div>':'')+tail.join('');
         return '<div class="hrc-entry '+typeClass+'" data-pop="'+esc(popHtml)+'">'+icon+' '+esc(e.label)+'</div>';
       }).join('');
-      const overflow = entries.length>4?'<div class="hrc-entry hrc-more">+'+(entries.length-4)+'</div>':'';
-      cells += '<div class="'+cls+'" data-date="'+iso+'"><div class="hrc-dnum">'+d.getDate()+'</div>'+entryHtml+overflow+'</div>';
+      cells += '<div class="'+cls+'" data-date="'+iso+'"><div class="hrc-dnum">'+d.getDate()+'</div>'+entryHtml+'</div>';
     }
-    const gridStyle = 'grid-template-rows:auto repeat('+numWeeks+',96px)';
+    const gridStyle = 'grid-template-rows:auto repeat('+numWeeks+',auto)';
     return {cells, bdayC, anniC, leaveC, fltReviewC, gridStyle};
   }
 
