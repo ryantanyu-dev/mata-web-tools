@@ -57,8 +57,8 @@
   .hri-mgr-name{font-size:var(--fs-md);font-weight:600}
   .hri-mgr-count{font-size:var(--fs-sm);color:var(--muted)}
   .hri-mgr-avg{font-size:var(--fs-sm);color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
-  .hri-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
-  .hri-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:var(--sp-10) var(--sp-12);display:flex;flex-direction:column;gap:6px;transition:box-shadow .12s ease}
+  .hri-cards{display:flex;flex-direction:column;gap:4px}
+  .hri-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:var(--sp-6) var(--sp-10);display:flex;flex-direction:column;gap:3px;transition:box-shadow .12s ease}
   .hri-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);border-color:#d1d5db}
   .hri-card-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
   .hri-card-name{font-size:var(--fs-md);font-weight:600;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -141,9 +141,12 @@ const BUCKET_LABEL = {
 const BUCKET_ORDER = ['completed','final','mid','early','stalled','not_started'];
 
 function renderCard(it, color) {
-  const bucket  = it.status_bucket;
-  const noTarget= !!it.target_missing;
-  const pct     = noTarget ? 0 : Math.max(0, Math.min(100, it.pct_capped || 0));
+  const bucket   = it.status_bucket;
+  const noTarget = !!it.target_missing;
+  const rawPct   = noTarget ? 0 : Math.max(0, it.pct || 0);        // true uncapped pct
+  const cap100   = Math.min(100, rawPct);                             // fill in 100% zone
+  // overflow: how far past 100%; scale: each 200% of overage = full overflow zone
+  const overflowPct = rawPct > 100 ? Math.min(100, (rawPct - 100) / 200 * 100) : 0;
   const lastNote = (() => {
     if (noTarget || bucket === 'not_started') return 'Never logged';
     if (it.days_since_last == null) return '';
@@ -156,34 +159,43 @@ function renderCard(it, color) {
     ? 'Started ' + it.first_date + ' · ' + it.days_active + ' active day' + (it.days_active === 1 ? '' : 's')
     : (noTarget ? 'Target not set in 201 col AF' : 'Not started');
   const targetWarn = noTarget
-    ? '<div style="background:#fff3cd;border:1px solid #f0ad4e;border-radius:4px;padding:2px 8px;font-size:var(--fs-sm);margin-bottom:4px;color:#856404">⚠ Target not set. Update 201 col AF.</div>'
+    ? '<div style="background:#fff3cd;border:1px solid #f0ad4e;border-radius:4px;padding:2px 8px;font-size:var(--fs-sm);margin-bottom:2px;color:#856404">⚠ Target not set. Update 201 col AF.</div>'
     : '';
   const targetLabel = noTarget
     ? '<span class="muted">—h</span>'
     : (it.hours_logged||0).toFixed(1)+'h <span class="muted">/ '+(it.target_hours||0).toFixed(0)+'h</span>';
-  const pctLabel = noTarget ? '—' : (it.pct||0).toFixed(0) + '%';
-  const overTarget = !noTarget && (it.pct || 0) > 100;
+  const pctLabel = noTarget ? '—' : rawPct.toFixed(0) + '%';
+  const overTarget = !noTarget && rawPct > 100;
   const overTargetBadge = overTarget
     ? '<span style="font-size:var(--fs-xs);color:#d97706;font-weight:600;margin-left:4px" '
         + 'title="Hours exceed the 201 target — verify col AF or logged hours">↑ over target</span>'
     : '';
+  // Bar: 70% track = 100% target zone; 2px tick at 70% = 100% marker; amber overflow beyond
+  const barHtml = noTarget
+    ? '<div style="position:relative;height:8px;margin:3px 0"><div style="width:70%;height:100%;background:repeating-linear-gradient(45deg,#f8d7da,#f8d7da 4px,#fff 4px,#fff 8px);border-radius:3px"></div></div>'
+    : '<div style="position:relative;height:8px;margin:3px 0">' +
+        '<div style="position:absolute;left:0;top:0;width:70%;height:100%;background:var(--border);border-radius:3px;overflow:hidden">' +
+          '<div class="hri-bar-fill b-'+bucket+'" style="width:'+cap100.toFixed(1)+'%;height:100%"></div>' +
+        '</div>' +
+        '<div style="position:absolute;left:70%;top:-2px;height:12px;width:2px;background:var(--muted);border-radius:1px" title="100% target"></div>' +
+        (overflowPct > 0
+          ? '<div style="position:absolute;left:calc(70% + 2px);top:0;height:100%;width:'+overflowPct.toFixed(1)+'%;max-width:29%;background:#f59e0b;border-radius:0 3px 3px 0;opacity:.85" title="'+rawPct.toFixed(0)+'% — over target"></div>'
+          : '') +
+      '</div>';
   return '<div class="hri-card' + (noTarget?' hri-card-warn':'') + '" title="' + esc(firstNote) + '">' +
     targetWarn +
-    '<div class="hri-card-row">' +
-      '<div class="hri-card-name" style="color:' + (color||'var(--text)') + '">' + esc(it.name||it.email) + '</div>' +
-      '<div class="hri-card-pct">' + pctLabel + overTargetBadge + '</div>' +
+    '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">' +
+      '<span style="font-size:var(--fs-md);font-weight:600;color:'+(color||'var(--text)')+'">'+esc(it.name||it.email)+'</span>' +
+      '<span style="font-size:var(--fs-xs);color:var(--muted);flex:1;min-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(it.email)+'</span>' +
+      '<span style="font-size:var(--fs-sm);color:var(--muted);white-space:nowrap">'+targetLabel+'</span>' +
+      '<span style="font-size:var(--fs-md);font-weight:700;white-space:nowrap">'+pctLabel+overTargetBadge+'</span>' +
     '</div>' +
-    '<div class="hri-card-email">' + esc(it.email) + '</div>' +
-    '<div class="hri-bar">' +
-      (noTarget
-        ? '<div class="hri-bar-fill" style="width:100%;background:repeating-linear-gradient(45deg,#f8d7da,#f8d7da 4px,#fff 4px,#fff 8px)"></div>'
-        : '<div class="hri-bar-fill b-' + bucket + '" style="width:' + pct.toFixed(1) + '%"></div>') +
+    barHtml +
+    '<div style="display:flex;align-items:center;gap:8px">' +
+      '<span class="hri-pill b-'+bucket+'">'+esc(BUCKET_LABEL[bucket]||bucket)+'</span>' +
+      '<span class="hri-card-last'+lastWarn+'" style="font-size:var(--fs-xs)">'+esc(lastNote)+'</span>' +
+      '<span style="font-size:var(--fs-xs);color:var(--muted)">'+esc(firstNote)+'</span>' +
     '</div>' +
-    '<div class="hri-card-foot">' +
-      '<span style="font-variant-numeric:tabular-nums">' + targetLabel + '</span>' +
-      '<span class="hri-pill b-' + bucket + '">' + esc(BUCKET_LABEL[bucket]||bucket) + '</span>' +
-    '</div>' +
-    '<div class="hri-card-last' + lastWarn + '">' + esc(lastNote) + '</div>' +
   '</div>';
 }
 
