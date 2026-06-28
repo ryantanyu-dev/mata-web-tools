@@ -14,7 +14,7 @@ Department-specific tools for the Mata group — Firebase-hosted, same `panso-ph
 | 2 | MG-HR Calendar | MG - HR | Coming soon |
 | 3 | MG-HR Interns | MG - HR | Coming soon |
 | 4 | MG-HR Pay Matrix | MG - HR | Coming soon |
-| 5 | MT-Ops Workload Matrix | MT - Ops | Coming soon |
+| 5 | MT-Ops Workload Matrix | MT - Ops | Moved to Panso (task 16) |
 | 6 | Agenda Trail | All | Coming soon |
 | 7 | Dept Documents | All | Coming soon |
 
