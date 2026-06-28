@@ -1,4 +1,4 @@
-phase: EXECUTING
+phase: AWAITING-POWERSHELL
 <!-- Opus 2026-06-27 (UI-feedback round): new tasks 12–16 authored from the live walkthrough.
      RUNNABLE NOW (in order, all but 15 touch incentive.html → sequential): 12 (period-picker port) →
      13 (incentive column distinct) → 14 (data-freshness header) → 15 (dept-docs single-source/D11).
@@ -43,19 +43,22 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 | 13 | Incentive: make incentive column visually distinct | qa-passed | (see COMMIT 1/2) | — | [A2] .ic-inc-col (green left-border + #f0fdf4 bg) on TH/TD body/TD footer; mobile .ic-card-incentive enhanced. Styling only — no formula change. +672 B. Parse OK. QA: PASS 2026-06-27 |
 | 14 | Incentive: persistent "Data as of" freshness indicator | qa-passed | (see COMMIT 1/2 + 2/2) | — | [A3] Header chip (.data-freshness-chip, id="data-freshness") populated from periodsData.data_synced_at (DATA_DIR mtime, UTC). tools_api.py list_available_periods() returns data_synced_at. Results-footer data_as_of unchanged. Parse OK / py_compile OK. QA: PASS 2026-06-27 |
 | 15 | Dept Documents: single-source sync w/ Panso (D11) | qa-passed | (see COMMIT 2/2) | — | **D11 RESOLVED: read-only single shared bucket.** Panso writes gs://panso-ph-data/data/dept-documents/ (R/W FUSE); Mata reads same path (readonly=true FUSE, cloudbuild.yaml L25-26). Drift impossible by construction. docs_dir() gains D11 comment + mkdir try/except guard. dept-documents.html: "Synced from department's Panso documents." UI hint added. py_compile OK, Parse OK. QA: PASS 2026-06-27 |
-| 16 | Remove Workload Matrix from Mata | queued · BLOCKED (Panso) | — | — | [feedback 16b] Workload Matrix is moving INTO Panso as a per-dept tab (Panso OPUS owns the build). Mata’s half: fully remove it — `public/tools/workload-matrix.html` (delete), launcher tile in `public/index.html` (L178–183), `/api/ops/workload` handler (tools_api.py:1522) + `all_time_active_emails` helper (264; **confirmed used only by workload** → remove). ⚠ GATE: do NOT run until Panso’s Workload tab is LIVE + QA-green (else coverage gap). Block-dependency on the Panso pipeline. |
+| 16 | Remove Workload Matrix from Mata | built · SHA 1a5ea2a | — (hosting only) | — | [feedback 16b] Gate cleared 2026-06-27: Panso Workload tab LIVE + QA-green (Panso task 29). Removed: tile from `public/index.html` (11845→11582 B, PARSE OK 7 entries); `/api/ops/workload` handler + `all_time_active_emails` helper from `app/tools_api.py` (82589→73855 B, py_compile OK); `public/tools/workload-matrix.html` delete staged for Ryan (`Remove-Item`). `README.md` Workload row → 'Moved to Panso'. Zero workload refs in `public/` + `app/`. Awaiting: _PENDING-COMMANDS.ps1 → commit + push + firebase deploy --only hosting → Opus QA. |
+| 17 | Launcher: group tools by department + show Lead | built | (see _PENDING-COMMANDS.ps1) | — (hosting only) | [UI] Flat grid replaced with per-dept sections. TOOLS entries: group+lead added (Panso config.json manager_email, 2026-06-27). renderTools() rewrites to GROUP_ORDER sections; empty groups hidden; no-tools state preserved; per-tile dept line dropped. CSS: .group-header/.group-header-name/.group-header-lead. canSee() unchanged. 10483→11845 B (+1362 B). Parse OK, NUL 0. |
 
 Status values: `pending` → `in-progress` → `built` → `qa-passed` / `qa-fail` (`queued · GATED`/`BLOCKED` = pre-authored, blocked by a gate)
 
 ## Current active task
 
-**Tasks 12–15 qa-passed (Opus live QA 2026-06-27). Task 16 BLOCKED (Panso Workload tab not yet live).**
+**Tasks 12–15 qa-passed. Task 17 built — awaiting Ryan commit + firebase deploy + Opus QA.**
 
-Commit batch staged in `_pipeline/web-tools/_PENDING-COMMANDS.ps1` (2 commits, commit-only):
-- COMMIT 1/2: incentive.html (tasks 12+13+14) — period picker, column distinction, freshness chip
-- COMMIT 2/2: tools_api.py + dept-documents.html (tasks 14b+15) — data_synced_at, D11 docs_dir
+Task 17 commit batch in `_pipeline/web-tools/_PENDING-COMMANDS.ps1`:
+- `git add public/index.html && git commit -m 'Task 17: launcher group-by-dept + Lead headers'`
+- Then: `git push && firebase deploy --only hosting`
 
-**16 — BLOCKED (Panso):** remove Workload Matrix from Mata once Panso’s Workload tab is live + QA-green.
+**Task 16 GATE CLEARED (2026-06-27): Panso Workload tab live + QA-green. Task 16 BUILT — tile + handler + helper removed; file deletion staged for Ryan.**
+
+
 
 Rails: NUL-guard + JS parse-gate edited HTML, `py_compile` tools_api.py, byte-size sentinel,
 grep-then-slice, commit-only into `_pipeline/web-tools/_PENDING-COMMANDS.ps1` (Ryan runs it). No deploys.
