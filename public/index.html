@@ -48,6 +48,9 @@
               text-transform:uppercase;padding:2px 7px;border-radius:999px;
               background:#f3f4f6;color:var(--muted);border:1px solid var(--border)}
   .tool-badge.live{background:#dcfce7;color:#15803d;border-color:#86efac}
+  .group-header{display:flex;align-items:baseline;gap:var(--sp-8);margin-bottom:var(--sp-12)}
+  .group-header-name{font-size:var(--fs-sm);font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.04em}
+  .group-header-lead{font-size:var(--fs-sm);color:var(--muted)}
   #loading{color:var(--muted);font-size:var(--fs-sm);text-align:center;padding:var(--sp-32)}
 </style>
 </head>
@@ -136,34 +139,43 @@
   };
 
   // ── 4. Tool grid ───────────────────────────────────────────────────────
+  // lead = Panso config.json departments[].manager_email, as of 2026-06-27
   const TOOLS = [
     {
-      name:   'Incentive Calculator',
-      dept:   'MG - Finance',
-      grant:  'dept::MG - Finance',
-      url:    '/tools/incentive.html',
-      live:   true,
+      name:  'Incentive Calculator',
+      dept:  'MG - Finance',
+      grant: 'dept::MG - Finance',
+      url:   '/tools/incentive.html',
+      live:  true,
+      group: 'MG - Finance',
+      lead:  'Norisa (norisa@mata.ph)',
     },
     {
-      name:   'HR Calendar',
-      dept:   'MG - HR',
-      grant:  'dept::MG - HR',
-      url:    '/tools/calendar.html',
-      live:   true,
+      name:  'HR Calendar',
+      dept:  'MG - HR',
+      grant: 'dept::MG - HR',
+      url:   '/tools/calendar.html',
+      live:  true,
+      group: 'MG - HR',
+      lead:  'Arielle Mancia (arielle.mancia@mata.ph)',
     },
     {
-      name:   'Interns Dashboard',
-      dept:   'MG - HR',
-      grant:  'dept::MG - HR',
-      url:    '/tools/interns.html',
-      live:   true,
+      name:  'Interns Dashboard',
+      dept:  'MG - HR',
+      grant: 'dept::MG - HR',
+      url:   '/tools/interns.html',
+      live:  true,
+      group: 'MG - HR',
+      lead:  'Arielle Mancia (arielle.mancia@mata.ph)',
     },
     {
-      name:   'Intern Allowance Matrix',
-      dept:   'MG - HR',
-      grant:  'dept::MG - HR',
-      url:    '/tools/intern-allowance-matrix.html',
-      live:   true,
+      name:  'Intern Allowance Matrix',
+      dept:  'MG - HR',
+      grant: 'dept::MG - HR',
+      url:   '/tools/intern-allowance-matrix.html',
+      live:  true,
+      group: 'MG - HR',
+      lead:  'Arielle Mancia (arielle.mancia@mata.ph)',
     },
     {
       name:     'Policies',
@@ -173,20 +185,26 @@
       external: true,
       url:      'https://mata-policies.web.app',
       live:     true,
+      group:    'Company-wide',
+      lead:     null,
     },
     {
-      name:   'Workload Matrix',
-      dept:   'MT - Ops',
-      grant:  'dept::MT - Operations (Domestic)',
-      url:    '/tools/workload-matrix.html',
-      live:   true,
+      name:  'Workload Matrix',
+      dept:  'MT - Ops',
+      grant: 'dept::MT - Operations (Domestic)',
+      url:   '/tools/workload-matrix.html',
+      live:  true,
+      group: 'MT - Operations (Domestic)',
+      lead:  'Jemar (jemar@mata.ph)',
     },
     {
-      name:   'Agenda Trail',
-      dept:   'All departments',
-      grant:  null,
-      url:    null,
-      live:   false,
+      name:  'Agenda Trail',
+      dept:  'All departments',
+      grant: null,
+      url:   null,
+      live:  false,
+      group: 'Company-wide',
+      lead:  null,
     },
     {
       name:   'Dept Documents',
@@ -195,6 +213,8 @@
       public: true,   // visible to all signed-in users; data gated server-side by dept:: grant
       url:    '/tools/dept-documents.html',
       live:   true,
+      group:  'Company-wide',
+      lead:   null,
     },
   ];
 
@@ -216,30 +236,40 @@
       return;
     }
 
-    const cards = visible.map(t => {
-      const badge = t.live
-        ? '<span class="tool-badge live">Live</span>'
-        : '<span class="tool-badge">Coming soon</span>';
-      if (t.live && t.url) {
-        const isExt = t.external || /^https?:\/\//.test(t.url);
-        const extAttrs = isExt ? ' target="_blank" rel="noopener noreferrer"' : '';
-        return `<a class="tool-card" href="${t.url}"${extAttrs}>
+    const GROUP_ORDER = ['MG - Finance', 'MG - HR', 'MT - Operations (Domestic)', 'Company-wide'];
+    let html = '';
+    GROUP_ORDER.forEach(group => {
+      const tools = visible.filter(t => t.group === group);
+      if (!tools.length) return;
+      const lead = tools[0].lead;
+      const leadSpan = group === 'Company-wide'
+        ? '<span class="group-header-lead">· everyone</span>'
+        : '<span class="group-header-lead">· Lead: ' + esc(lead) + '</span>';
+      const cards = tools.map(t => {
+        const badge = t.live
+          ? '<span class="tool-badge live">Live</span>'
+          : '<span class="tool-badge">Coming soon</span>';
+        if (t.live && t.url) {
+          const isExt = t.external || /^https?:\/\//.test(t.url);
+          const extAttrs = isExt ? ' target="_blank" rel="noopener noreferrer"' : '';
+          return `<a class="tool-card" href="${t.url}"${extAttrs}>
           <div class="tool-name">${esc(t.name)}</div>
-          <div class="tool-dept">${esc(t.dept)}</div>
           ${badge}
         </a>`;
-      }
-      return `<div class="tool-card coming-soon">
-        <div class="tool-name">${esc(t.name)}</div>
-        <div class="tool-dept">${esc(t.dept)}</div>
-        ${badge}
-      </div>`;
-    }).join('');
-
-    wrap.innerHTML = `
-      <div class="section-lbl">Your tools</div>
-      <div class="tools-grid">${cards}</div>
-    `;
+        }
+        return `<div class="tool-card coming-soon">
+          <div class="tool-name">${esc(t.name)}</div>
+          ${badge}
+        </div>`;
+      }).join('');
+      html += `
+      <div class="group-header">
+        <span class="group-header-name">${esc(group)}</span>
+        ${leadSpan}
+      </div>
+      <div class="tools-grid">${cards}</div>`;
+    });
+    wrap.innerHTML = html;
   }
 
   function esc(s) {
