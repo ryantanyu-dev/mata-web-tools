@@ -856,10 +856,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send_json({"items": out}, origin=origin)
 
             if u.path == "/api/finance/incentive":
-                try:
-                    gate_request(tier_info, require_comp=True)
-                except AccessDenied as exc:
-                    return self._send_json({"error": exc.message}, exc.status, origin=origin)
+                if not (tier_info.get("tier") == "admin"
+                        or can_access_scope(tier_info, "dept::MG - Finance")):
+                    return self._send_json({"error": "Restricted to MG - Finance."}, 403, origin=origin)
                 params    = parse_qs(u.query)
                 proj_name = (params.get("project", [""])[0] or "").strip()
                 if not proj_name:
