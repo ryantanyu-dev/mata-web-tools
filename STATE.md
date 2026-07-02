@@ -46,14 +46,15 @@ Update it after every session: set status, record commit SHA and Cloud Run revis
 | 16 | Remove Workload Matrix from Mata | built · SHA 2dbecfe | — (hosting only) | — | [feedback 16b] Gate cleared 2026-06-27: Panso Workload tab LIVE + QA-green (Panso task 29). Removed: tile from `public/index.html` (11845→11582 B, PARSE OK 7 entries); `/api/ops/workload` handler + `all_time_active_emails` helper from `app/tools_api.py` (82589→73855 B, py_compile OK); `public/tools/workload-matrix.html` delete staged for Ryan (`Remove-Item`). `README.md` Workload row → 'Moved to Panso'. Zero workload refs in `public/` + `app/`. Awaiting: _PENDING-COMMANDS.ps1 → commit + push + firebase deploy --only hosting → Opus QA. |
 | 17 | Launcher: group tools by department + show Lead | built | (see _PENDING-COMMANDS.ps1) | — (hosting only) | [UI] Flat grid replaced with per-dept sections. TOOLS entries: group+lead added (Panso config.json manager_email, 2026-06-27). renderTools() rewrites to GROUP_ORDER sections; empty groups hidden; no-tools state preserved; per-tile dept line dropped. CSS: .group-header/.group-header-name/.group-header-lead. canSee() unchanged. 10483→11845 B (+1362 B). Parse OK, NUL 0. |
 | 18 | Fix Incentive access: dept-scope not admin-only | built · SHA 2dbecfe | — | — (Cloud Run) | [access bug] Replaced `try: gate_request(require_comp=True)` with `admin OR can_access_scope(dept::MG-Finance)` (L858–861). Matches dept-docs/workload pattern. app/tools_api.py 73855→73874 B (+19 B). py_compile OK, NUL 0. Note: bundled in COMMIT 2 with task 16 (both tools_api.py edits pending simultaneously). Awaiting deploy + Opus QA. |
+| 19 | Incentive: fix double-counted totals (P0 calc bug) | built | — | — (hosting only) | [calc bug] recomputeTotals() L759: replaced `querySelectorAll('#ic-result tbody tr, #ic-result .ic-card')` with dedupe-by-data-row-idx filter (table rows first in DOM → correct read). Per-row incentive update now queries both table+card by idx. .ic-row-cb change handler now mirrors checked state to paired counterpart before recompute. 51442→52101 B (+659 B). Parse OK, NUL 0. Awaiting commit + firebase deploy --only hosting + Opus QA. |
 
 Status values: `pending` → `in-progress` → `built` → `qa-passed` / `qa-fail` (`queued · GATED`/`BLOCKED` = pre-authored, blocked by a gate)
 
 ## Current active task
 
-**Tasks 12–15 qa-passed. Tasks 16+17+18 built — awaiting Ryan to run `_PENDING-COMMANDS.ps1` → push → Cloud Run deploy → firebase deploy --only hosting → Opus QA.**
+**Tasks 12–18 qa-passed (or live). Task 19 built — awaiting Ryan to run `_PENDING-COMMANDS.ps1` → push → `firebase deploy --only hosting --project panso-ph` → Opus QA.**
 
-`_PENDING-COMMANDS.ps1` (3 commits): COMMIT 1 = index.html (tasks 17+16 tile); COMMIT 2 = tools_api.py (task 16 workload removal + task 18 incentive gate fix, bundled); COMMIT 3 = pipeline close. **Needs Cloud Run deploy** (tools_api.py changed).
+`_PENDING-COMMANDS.ps1` (2 commits): COMMIT 1 = incentive.html (task 19 double-count fix, 51442→52101 B); COMMIT 2 = pipeline close. **Hosting deploy only** (no Cloud Run change).
 
 
 
