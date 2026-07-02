@@ -756,7 +756,11 @@ function renderIncentiveResult(data) {
     '</div>';
 
   function recomputeTotals() {
-    var rows    = document.querySelectorAll('#ic-result tbody tr, #ic-result .ic-card');
+    var seen = {};
+    var rows = Array.prototype.filter.call(
+      document.querySelectorAll('#ic-result [data-row-idx]'),
+      function(el) { var k = el.dataset.rowIdx; if (seen[k]) return false; seen[k] = 1; return true; }
+    );
     var checked = [];
     rows.forEach(function(tr) {
       var cb = tr.querySelector('.ic-row-cb');
@@ -791,16 +795,20 @@ function renderIncentiveResult(data) {
       var cb      = tr.querySelector('.ic-row-cb');
       var hasRate = tr.dataset.hasRate === '1';
       var base    = parseFloat(tr.dataset.base) || 0;
-      var incCell = tr.querySelector('td:last-child') || tr.querySelector('.ic-card-incentive value');
-      if (!incCell) return;
-      if (!hasRate) {
-        incCell.innerHTML = '<span class="muted">—</span>';
-      } else if (cb && cb.checked && !isNaN(m)) {
-        var v = base * (m - 1);
-        incCell.innerHTML = '<strong>₱' + v.toFixed(2) + '</strong>';
-      } else {
-        incCell.innerHTML = '<span class="muted">—</span>';
-      }
+      var idx     = tr.dataset.rowIdx;
+      // update both table row and card for this member so the hidden view stays correct on resize
+      document.querySelectorAll('#ic-result [data-row-idx="' + idx + '"]').forEach(function(el) {
+        var incCell = el.querySelector('td:last-child') || el.querySelector('.ic-card-incentive value');
+        if (!incCell) return;
+        if (!hasRate) {
+          incCell.innerHTML = '<span class="muted">—</span>';
+        } else if (cb && cb.checked && !isNaN(m)) {
+          var v = base * (m - 1);
+          incCell.innerHTML = '<strong>₱' + v.toFixed(2) + '</strong>';
+        } else {
+          incCell.innerHTML = '<span class="muted">—</span>';
+        }
+      });
     });
     var totalInc = isNaN(m) ? 0 : (sumBase * (m - 1));
     document.getElementById('ic-tot-label').textContent =
@@ -827,7 +835,13 @@ function renderIncentiveResult(data) {
     _incentiveState.lastChanged = 'multiplier'; recomputeTotals();
   });
   document.querySelectorAll('.ic-row-cb').forEach(function(cb) {
-    cb.addEventListener('change', recomputeTotals);
+    cb.addEventListener('change', function() {
+      var idx = this.closest('[data-row-idx]').dataset.rowIdx;
+      document.querySelectorAll('#ic-result [data-row-idx="' + idx + '"] .ic-row-cb').forEach(function(peer) {
+        peer.checked = cb.checked;
+      });
+      recomputeTotals();
+    });
   });
   var cbAll = document.getElementById('ic-cb-all');
   if (cbAll) {
